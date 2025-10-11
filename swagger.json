@@ -1,0 +1,1317 @@
+  {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Sparkle Wash API Documentation",
+      "version": "1.0.0",
+      "description": "API documentation for Car Wash, Service, and Order management system",
+      "contact": {
+        "name": "Naveen",
+        "email": "support@sparklewash.com"
+      }
+    },
+    "servers": [
+      {
+        "url": "http://localhost:5000"
+      }
+    ],
+    "paths": {
+      "/User/registerUser": {
+        "post": {
+          "tags": [
+            "User"
+          ],
+          "summary": "Register a new user",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fullName": {
+                      "type": "string",
+                      "example": "Naveen"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "naveen@example.com"
+                    },
+                    "phoneNumber": {
+                      "type": "string",
+                      "example": "9876543210"
+                    },
+                    "password": {
+                      "type": "string",
+                      "example": "password123"
+                    },
+                    "confirmPassword": {
+                      "type": "string",
+                      "example": "password123"
+                    }
+                  },
+                  "required": [
+                    "fullName",
+                    "email",
+                    "phoneNumber",
+                    "password",
+                    "confirmPassword"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "User registered successfully"
+            },
+            "400": {
+              "description": "Missing or invalid fields / User already exists"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washBooking/createWashBooking": {
+        "post": {
+          "tags": [
+            "Wash Booking"
+          ],
+          "summary": "Create a new wash booking",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "customerId": {
+                      "type": "string",
+                      "example": "68e9eb5372ffcf9a50ca0d03"
+                    },
+                    "vehicleType": {
+                      "type": "string",
+                      "enum": [
+                        "Car",
+                        "Bike"
+                      ],
+                      "example": "Bike"
+                    },
+                    "vehicleNumber": {
+                      "type": "string",
+                      "example": "TN01AB1234"
+                    },
+                    "washPackage": {
+                      "type": "string",
+                      "enum": [
+                        "Basic",
+                        "Standard",
+                        "Premium"
+                      ],
+                      "example": "Premium"
+                    },
+                    "serviceType": {
+                      "type": "string",
+                      "enum": [
+                        "Normal",
+                        "Express"
+                      ],
+                      "example": "Normal"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "street": {
+                          "type": "string",
+                          "example": "12 Gandhi Street"
+                        },
+                        "city": {
+                          "type": "string",
+                          "example": "Chennai"
+                        },
+                        "pincode": {
+                          "type": "string",
+                          "example": "600001"
+                        }
+                      },
+                      "required": [
+                        "street",
+                        "city",
+                        "pincode"
+                      ]
+                    },
+                    "bookingDate": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2025-10-12"
+                    },
+                    "bookingTime": {
+                      "type": "string",
+                      "example": "10:30 AM"
+                    },
+                    "paymentMethod": {
+                      "type": "string",
+                      "enum": [
+                        "Cash",
+                        "UPI",
+                        "Card"
+                      ],
+                      "example": "UPI"
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "enum": [
+                        "Pending",
+                        "Completed"
+                      ],
+                      "example": "Paid"
+                    }
+                  },
+                  "required": [
+                    "customerId",
+                    "vehicleType",
+                    "vehicleNumber",
+                    "washPackage",
+                    "serviceType",
+                    "address"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Booking created successfully"
+            },
+            "400": {
+              "description": "Missing or invalid fields"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washBooking/getAllWashBookings": {
+        "get": {
+          "tags": [
+            "Wash Booking"
+          ],
+          "summary": "Fetch all wash bookings",
+          "responses": {
+            "200": {
+              "description": "All wash bookings fetched successfully"
+            },
+            "404": {
+              "description": "No bookings found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washBooking/getWashBookingById/{id}": {
+        "get": {
+          "tags": [
+            "Wash Booking"
+          ],
+          "summary": "Fetch a wash booking by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Booking fetched successfully"
+            },
+            "404": {
+              "description": "Booking not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washBooking/getBookingsByCustomerId/{customerId}": {
+        "get": {
+          "tags": [
+            "Wash Booking"
+          ],
+          "summary": "Fetch all bookings for a specific customer",
+          "parameters": [
+            {
+              "name": "customerId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "68e9eb5372ffcf9a50ca0d03"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Bookings fetched successfully"
+            },
+            "400": {
+              "description": "Invalid customer ID"
+            },
+            "404": {
+              "description": "No bookings found for this customer"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washBooking/updateWashBooking/{id}": {
+        "put": {
+          "tags": [
+            "Wash Booking"
+          ],
+          "summary": "Update a wash booking by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "washPackage": {
+                      "type": "string",
+                      "example": "Deluxe"
+                    },
+                    "serviceType": {
+                      "type": "string",
+                      "example": "Normal"
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "example": "Pending"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Booking updated successfully"
+            },
+            "404": {
+              "description": "Booking not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washBooking/deleteWashBooking/{id}": {
+        "delete": {
+          "tags": [
+            "Wash Booking"
+          ],
+          "summary": "Delete a wash booking by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Booking deleted successfully"
+            },
+            "404": {
+              "description": "Booking not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/CustomerShopping/createOrder": {
+        "post": {
+          "tags": [
+            "CustomerShopping"
+          ],
+          "summary": "Create a new order",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "customerId": {
+                      "type": "string",
+                      "example": "68e9eb5372ffcf9a50ca0d03"
+                    },
+                    "cartItems": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "productId": {
+                            "type": "string",
+                            "example": "652a1f3e2b9871dabc123456"
+                          },
+                          "productName": {
+                            "type": "string",
+                            "example": "Car Wax"
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "example": 2
+                          },
+                          "price": {
+                            "type": "number",
+                            "example": 500
+                          },
+                          "total": {
+                            "type": "number",
+                            "example": 1000
+                          }
+                        }
+                      }
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "street": {
+                          "type": "string",
+                          "example": "12 Gandhi Street"
+                        },
+                        "city": {
+                          "type": "string",
+                          "example": "Chennai"
+                        },
+                        "pincode": {
+                          "type": "string",
+                          "example": "600001"
+                        },
+                        "maxCars": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "location": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "Point"
+                            },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "example": [
+                                80.2707,
+                                13.0827
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "payment": {
+                      "type": "object",
+                      "properties": {
+                        "method": {
+                          "type": "string",
+                          "enum": [
+                            "COD",
+                            "CreditCard",
+                            "DebitCard",
+                            "UPI",
+                            "NetBanking"
+                          ],
+                          "example": "UPI"
+                        },
+                        "transactionId": {
+                          "type": "string",
+                          "example": "TXN123456"
+                        },
+                        "amount": {
+                          "type": "number",
+                          "example": 1000
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "Pending",
+                            "Completed",
+                            "Failed"
+                          ],
+                          "example": "Pending"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "customerId",
+                    "cartItems",
+                    "address",
+                    "payment"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Order created successfully"
+            },
+            "400": {
+              "description": "Missing required fields"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/CustomerShopping/getAllOrders": {
+        "get": {
+          "tags": [
+            "CustomerShopping"
+          ],
+          "summary": "Get all orders",
+          "responses": {
+            "200": {
+              "description": "Orders fetched successfully"
+            },
+            "404": {
+              "description": "No orders found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/CustomerShopping/getOrderById/{id}": {
+        "get": {
+          "tags": [
+            "CustomerShopping"
+          ],
+          "summary": "Get order by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Order fetched successfully"
+            },
+            "404": {
+              "description": "Order not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/CustomerShopping/getOrderedItems/{customerId}": {
+        "get": {
+          "tags": [
+            "CustomerShopping"
+          ],
+          "summary": "Get orders by customer ID",
+          "parameters": [
+            {
+              "name": "customerId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "68e9eb5372ffcf9a50ca0d03"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Customer orders fetched successfully"
+            },
+            "404": {
+              "description": "No orders found for this customer"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/CustomerShopping/updateOrder/{id}": {
+        "put": {
+          "tags": [
+            "CustomerShopping"
+          ],
+          "summary": "Update an order by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cartItems": {
+                      "type": "array"
+                    },
+                    "address": {
+                      "type": "object"
+                    },
+                    "payment": {
+                      "type": "object"
+                    },
+                    "orderStatus": {
+                      "type": "string",
+                      "enum": [
+                        "Processing",
+                        "Shipped",
+                        "Delivered",
+                        "Cancelled"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Order updated successfully"
+            },
+            "404": {
+              "description": "Order not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/CustomerShopping/deleteOrder/{id}": {
+        "delete": {
+          "tags": [
+            "CustomerShopping"
+          ],
+          "summary": "Delete an order by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Order deleted successfully"
+            },
+            "404": {
+              "description": "Order not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/ServiceBooking/createServiceOrder": {
+        "post": {
+          "summary": "Create a new service booking order",
+          "tags": [
+            "ServiceBooking"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "customerId": {
+                      "type": "string",
+                      "example": "6710d40ef8c1f9a4a5b6c123"
+                    },
+                    "serviceItems": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "serviceId": {
+                            "type": "string",
+                            "example": "6710d4f1b3a9a0a6a6b8e124"
+                          },
+                          "productImage": {
+                            "type": "string",
+                            "example": "https://example.com/image.jpg"
+                          },
+                          "productName": {
+                            "type": "string",
+                            "example": "AC Cleaning"
+                          },
+                          "description": {
+                            "type": "string",
+                            "example": "Full AC cleaning and service"
+                          },
+                          "serviceCharges": {
+                            "type": "number",
+                            "example": 600
+                          },
+                          "serviceStore": {
+                            "type": "object",
+                            "properties": {
+                              "storeName": {
+                                "type": "string",
+                                "example": "CoolCare Services"
+                              },
+                              "storeAddress": {
+                                "type": "string",
+                                "example": "123 Anna Nagar, Chennai"
+                              },
+                              "contactNumber": {
+                                "type": "string",
+                                "example": "9876543210"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "street": {
+                          "type": "string",
+                          "example": "No.10, Gandhi Street"
+                        },
+                        "city": {
+                          "type": "string",
+                          "example": "Chennai"
+                        },
+                        "pincode": {
+                          "type": "string",
+                          "example": "600040"
+                        },
+                        "location": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "Point"
+                            },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "example": [
+                                80.2707,
+                                13.0827
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2025-10-12"
+                    },
+                    "time": {
+                      "type": "string",
+                      "example": "14:30"
+                    },
+                    "payment": {
+                      "type": "object",
+                      "properties": {
+                        "method": {
+                          "type": "string",
+                          "example": "Online"
+                        },
+                        "transactionId": {
+                          "type": "string",
+                          "example": "TXN12345ABC"
+                        },
+                        "amount": {
+                          "type": "number",
+                          "example": 600
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "Pending"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "customerId",
+                    "serviceItems",
+                    "address",
+                    "date",
+                    "time",
+                    "payment"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Service order created successfully"
+            },
+            "400": {
+              "description": "Validation error"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/ServiceBooking/getAllServiceOrders": {
+        "get": {
+          "summary": "Get all service orders (Admin)",
+          "tags": [
+            "ServiceBooking"
+          ],
+          "responses": {
+            "200": {
+              "description": "All service orders fetched successfully"
+            },
+            "404": {
+              "description": "No service orders found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/ServiceBooking/getServiceOrdersByCustomer/{customerId}": {
+        "get": {
+          "summary": "Get all service orders by customer ID",
+          "tags": [
+            "ServiceBooking"
+          ],
+          "parameters": [
+            {
+              "name": "customerId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d40ef8c1f9a4a5b6c123"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Orders fetched successfully"
+            },
+            "404": {
+              "description": "No service orders found for this customer"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/ServiceBooking/getServiceOrderById/{orderId}": {
+        "get": {
+          "summary": "Get single service order by ID",
+          "tags": [
+            "ServiceBooking"
+          ],
+          "parameters": [
+            {
+              "name": "orderId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d4f1b3a9a0a6a6b8e125"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Service order fetched successfully"
+            },
+            "404": {
+              "description": "Order not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/ServiceBooking/updateServiceOrder/{orderId}": {
+        "put": {
+          "summary": "Update a service order",
+          "tags": [
+            "ServiceBooking"
+          ],
+          "parameters": [
+            {
+              "name": "orderId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d4f1b3a9a0a6a6b8e125"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "example": {
+                    "serviceStatus": "Processing",
+                    "payment": {
+                      "status": "Completed",
+                      "transactionId": "TXN12345ABC"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Service order updated successfully"
+            },
+            "404": {
+              "description": "Order not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/ServiceBooking/deleteServiceOrder/{orderId}": {
+        "delete": {
+          "summary": "Delete a service order by ID",
+          "tags": [
+            "ServiceBooking"
+          ],
+          "parameters": [
+            {
+              "name": "orderId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d4f1b3a9a0a6a6b8e125"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Service order deleted successfully"
+            },
+            "404": {
+              "description": "Order not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washerEmp/createWasherEmployee": {
+        "post": {
+          "summary": "Create a new washer employee",
+          "tags": [
+            "WasherEmployee"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fullName": {
+                      "type": "string",
+                      "example": "John Doe"
+                    },
+                    "phone": {
+                      "type": "string",
+                      "example": "9876543210"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "john@example.com"
+                    },
+                    "password": {
+                      "type": "string",
+                      "example": "password123"
+                    },
+                    "dateOfBirth": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "1990-05-15"
+                    },
+                    "gender": {
+                      "type": "string",
+                      "enum": [
+                        "Male",
+                        "Female",
+                        "Other"
+                      ],
+                      "example": "Male"
+                    },
+                    "referralCode": {
+                      "type": "string",
+                      "example": "REF1234"
+                    },
+                    "serviceCategories": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": [
+                        "Washing",
+                        "Repair"
+                      ]
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "Washing Personnel",
+                        "Delivery Person",
+                        "Repair Service Technician",
+                        "Product Seller"
+                      ],
+                      "example": "Washing Personnel"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "street": {
+                          "type": "string",
+                          "example": "123 Anna Street"
+                        },
+                        "city": {
+                          "type": "string",
+                          "example": "Chennai"
+                        },
+                        "state": {
+                          "type": "string",
+                          "example": "Tamil Nadu"
+                        },
+                        "postalCode": {
+                          "type": "string",
+                          "example": "600040"
+                        },
+                        "country": {
+                          "type": "string",
+                          "example": "India"
+                        },
+                        "location": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "Point"
+                            },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "example": [
+                                80.2707,
+                                13.0827
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "emergencyContact": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Jane Doe"
+                        },
+                        "phone": {
+                          "type": "string",
+                          "example": "9876543211"
+                        }
+                      }
+                    },
+                    "vehicle": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "example": "Bike"
+                        },
+                        "model": {
+                          "type": "string",
+                          "example": "Honda Activa"
+                        },
+                        "licensePlate": {
+                          "type": "string",
+                          "example": "TN01AB1234"
+                        },
+                        "registrationCertificate": {
+                          "type": "string",
+                          "example": "https://example.com/rc.pdf"
+                        },
+                        "drivingLicense": {
+                          "type": "string",
+                          "example": "https://example.com/dl.pdf"
+                        },
+                        "documentVerified": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    },
+                    "bankDetails": {
+                      "type": "object",
+                      "properties": {
+                        "accountHolderName": {
+                          "type": "string",
+                          "example": "John Doe"
+                        },
+                        "accountNumber": {
+                          "type": "string",
+                          "example": "1234567890"
+                        },
+                        "ifscCode": {
+                          "type": "string",
+                          "example": "SBIN0001234"
+                        },
+                        "aadhaarCard": {
+                          "type": "string",
+                          "example": "https://example.com/aadhaar.pdf"
+                        }
+                      }
+                    },
+                    "termsAccepted": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  },
+                  "required": [
+                    "fullName",
+                    "phone",
+                    "email",
+                    "password",
+                    "dateOfBirth",
+                    "gender",
+                    "role",
+                    "address",
+                    "emergencyContact"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Washer employee created successfully"
+            },
+            "400": {
+              "description": "Validation error"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washerEmp/getAllWasherEmployees": {
+        "get": {
+          "summary": "Get all washer employees",
+          "tags": [
+            "WasherEmployee"
+          ],
+          "responses": {
+            "200": {
+              "description": "Fetched all washer employees"
+            },
+            "404": {
+              "description": "No washer employees found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washerEmp/getWasherEmployeeById/{id}": {
+        "get": {
+          "summary": "Get a washer employee by ID",
+          "tags": [
+            "WasherEmployee"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d4f1b3a9a0a6a6b8e125"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Washer employee fetched successfully"
+            },
+            "404": {
+              "description": "Washer employee not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washerEmp/updateWasherEmployee/{id}": {
+        "put": {
+          "summary": "Update a washer employee by ID",
+          "tags": [
+            "WasherEmployee"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d4f1b3a9a0a6a6b8e125"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Washer employee updated successfully"
+            },
+            "404": {
+              "description": "Washer employee not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/washerEmp/deleteWasherEmployee/{id}": {
+        "delete": {
+          "summary": "Delete a washer employee by ID",
+          "tags": [
+            "WasherEmployee"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "6710d4f1b3a9a0a6a6b8e125"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Washer employee deleted successfully"
+            },
+            "404": {
+              "description": "Washer employee not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      }
+    },
+    "components": {},
+    "tags": [
+      {
+        "name": "Wash Booking",
+        "description": "Manage car wash bookings"
+      }
+    ]
+  }

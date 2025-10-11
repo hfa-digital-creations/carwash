@@ -1,0 +1,431 @@
+// import Customer from "../models/customerModels.js";
+// import bcrypt from "bcryptjs";
+// import otpGenerator from "otp-generator";
+// import nodemailer from "nodemailer";
+
+// // Temporary stores
+// let registrationStore = {}; // for registration
+// let passwordResetStore = {}; // for forgot/reset password
+
+// // -------------------- STEP 1: Send OTP & Temporarily Store User Data --------------------
+// const sendRegistrationOTP = async (req, res) => {
+//   try {
+//     const { fullName, email, phoneNumber, password, confirmPassword } = req.body;
+
+//     if (!fullName || !email || !phoneNumber || !password || !confirmPassword)
+//       return res.status(400).json({ message: "All fields are required" });
+
+//     if (password !== confirmPassword)
+//       return res.status(400).json({ message: "Passwords do not match" });
+
+//     const existing = await Customer.findOne({ $or: [{ email }, { phoneNumber }] });
+//     if (existing) return res.status(400).json({ message: "User already exists" });
+
+//     const otp = otpGenerator.generate(4, { upperCaseAlphabets: false, specialChars: false });
+
+//     registrationStore[email] = {
+//       data: { fullName, email, phoneNumber, password },
+//       otp,
+//     };
+
+//     console.log("Registration OTP:", otp);
+
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+//     });
+
+//     await transporter.sendMail({
+//       from: `"Car Wash Service" <${process.env.EMAIL_USER}>`,
+//       to: email,
+//       subject: "Your OTP for Registration",
+//       text: `Hello ${fullName}, your OTP for registration is ${otp}.`,
+//     });
+
+//     res.status(200).json({ message: "OTP sent to email successfully ✅" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
+
+// // -------------------- STEP 2: Verify OTP & Register User --------------------
+// const verifyOTPAndRegister = async (req, res) => {
+//   try {
+//     const { otp } = req.body;
+
+//     if (!otp) return res.status(400).json({ message: "OTP is required" });
+
+//     const email = Object.keys(registrationStore).find(key => registrationStore[key].otp === otp);
+//     if (!email) return res.status(400).json({ message: "Invalid or expired OTP" });
+
+//     const { fullName, phoneNumber, password } = registrationStore[email].data;
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const newUser = new Customer({
+//       fullName,
+//       email: email.toLowerCase(),
+//       phoneNumber,
+//       password: hashedPassword,
+//     });
+
+//     await newUser.save();
+//     delete registrationStore[email];
+
+//     res.status(201).json({ message: "User registered successfully", user: newUser });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// // -------------------- STEP 3: Forgot Password (Send OTP) --------------------
+// const forgotPassword = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     if (!email) return res.status(400).json({ message: "Email is required" });
+
+//     const user = await Customer.findOne({ email });
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     const otp = otpGenerator.generate(4, { upperCaseAlphabets: false, specialChars: false });
+//     passwordResetStore[email] = { otp };
+
+//     console.log("Forgot Password OTP:", otp);
+
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+//     });
+
+//     await transporter.sendMail({
+//       from: `"Car Wash Service" <${process.env.EMAIL_USER}>`,
+//       to: email,
+//       subject: "Your OTP for Password Reset",
+//       text: `Hello, your OTP for password reset is ${otp}.`,
+//     });
+
+//     res.status(200).json({ message: "OTP sent to email successfully ✅" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// // -------------------- STEP 4: Reset Password Using OTP --------------------
+// const resetPassword = async (req, res) => {
+//   try {
+//     const { email, otp, newPassword, confirmPassword } = req.body;
+
+//     if (!email || !otp || !newPassword || !confirmPassword)
+//       return res.status(400).json({ message: "All fields are required" });
+
+//     if (newPassword !== confirmPassword)
+//       return res.status(400).json({ message: "Passwords do not match" });
+
+//     const storedData = passwordResetStore[email];
+//     if (!storedData || storedData.otp !== otp)
+//       return res.status(400).json({ message: "Invalid or expired OTP" });
+
+//     const user = await Customer.findOne({ email });
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     user.password = await bcrypt.hash(newPassword, 10);
+//     await user.save();
+//     delete passwordResetStore[email];
+
+//     res.status(200).json({ message: "Password reset successfully ✅" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// // -------------------- CRUD OPERATIONS --------------------
+
+// // Get all customers
+// const getAllCustomers = async (req, res) => {
+//   try {
+//     const customers = await Customer.find().sort({ createdAt: -1 });
+//     res.status(200).json({ message: "All customers fetched", customers });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// // Get customer by ID
+// const getCustomerById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const customer = await Customer.findById(id);
+//     if (!customer) return res.status(404).json({ message: "Customer not found" });
+//     res.status(200).json({ message: "Customer fetched", customer });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// // Update customer
+// const updateCustomer = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updates = req.body;
+
+//     if (updates.password) {
+//       updates.password = await bcrypt.hash(updates.password, 10);
+//     }
+
+//     const customer = await Customer.findByIdAndUpdate(id, updates, { new: true });
+//     if (!customer) return res.status(404).json({ message: "Customer not found" });
+
+//     res.status(200).json({ message: "Customer updated", customer });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// // Delete customer
+// const deleteCustomer = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const customer = await Customer.findByIdAndDelete(id);
+//     if (!customer) return res.status(404).json({ message: "Customer not found" });
+//     res.status(200).json({ message: "Customer deleted successfully" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// export default {
+//   sendRegistrationOTP,
+//   verifyOTPAndRegister,
+//   forgotPassword,
+//   resetPassword,
+//   getAllCustomers,
+//   getCustomerById,
+//   updateCustomer,
+//   deleteCustomer,
+// };
+
+
+// routes
+// import express from "express";
+// import CustomerControllers from "../controllers/CustomerControllers.js";
+
+// const router = express.Router();
+
+// // -------------------- OTP & Registration --------------------
+// router.post("/sendOTP", CustomerControllers.sendRegistrationOTP);       // Step 1: Send OTP
+// router.post("/registerUser", CustomerControllers.verifyOTPAndRegister); // Step 2: Verify OTP & register user
+
+// // -------------------- Password Reset --------------------
+// router.post("/forgotPassword", CustomerControllers.forgotPassword);     // Send OTP for password reset
+// router.post("/resetPassword", CustomerControllers.resetPassword);       // Reset password using OTP
+
+// // -------------------- CRUD OPERATIONS --------------------
+// router.get("/getAllCustomers", CustomerControllers.getAllCustomers);   // Get all customers
+// router.get("/getCustomerById/:id", CustomerControllers.getCustomerById);// Get single customer by ID
+// router.put("/updateCustomer/:id", CustomerControllers.updateCustomer);  // Update customer
+// router.delete("/deleteCustomer/:id", CustomerControllers.deleteCustomer);// Delete customer
+
+// export default router;
+
+// swagger path
+//  "/User/sendOTP": {
+    //   "post": {
+    //     "tags": ["Customer"],
+    //     "summary": "Send OTP for registration",
+    //     "requestBody": {
+    //       "required": true,
+    //       "content": {
+    //         "application/json": {
+    //           "schema": {
+    //             "type": "object",
+    //             "properties": {
+    //               "fullName": { "type": "string", "example": "Naveen Kumar" },
+    //               "email": { "type": "string", "example": "naveen@gmail.com" },
+    //               "phoneNumber": { "type": "string", "example": "9876543210" },
+    //               "password": { "type": "string", "example": "12345" },
+    //               "confirmPassword": { "type": "string", "example": "12345" }
+    //             },
+    //             "required": ["fullName", "email", "phoneNumber", "password", "confirmPassword"]
+    //           }
+    //         }
+    //       }
+    //     },
+    //     "responses": {
+    //       "200": { "description": "OTP sent to email successfully ✅" },
+    //       "400": { "description": "Validation error or user already exists" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/registerUser": {
+    //   "post": {
+    //     "tags": ["Customer"],
+    //     "summary": "Verify OTP and register user",
+    //     "requestBody": {
+    //       "required": true,
+    //       "content": {
+    //         "application/json": {
+    //           "schema": {
+    //             "type": "object",
+    //             "properties": {
+    //               "otp": { "type": "string", "example": "1234" }
+    //             },
+    //             "required": ["otp"]
+    //           }
+    //         }
+    //       }
+    //     },
+    //     "responses": {
+    //       "201": { "description": "User registered successfully" },
+    //       "400": { "description": "Invalid OTP or missing fields" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/forgotPassword": {
+    //   "post": {
+    //     "tags": ["Customer"],
+    //     "summary": "Send OTP for password reset",
+    //     "requestBody": {
+    //       "required": true,
+    //       "content": {
+    //         "application/json": {
+    //           "schema": {
+    //             "type": "object",
+    //             "properties": {
+    //               "email": { "type": "string", "example": "naveen@gmail.com" }
+    //             },
+    //             "required": ["email"]
+    //           }
+    //         }
+    //       }
+    //     },
+    //     "responses": {
+    //       "200": { "description": "OTP sent to email successfully ✅" },
+    //       "404": { "description": "User not found" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/resetPassword": {
+    //   "post": {
+    //     "tags": ["Customer"],
+    //     "summary": "Reset password using OTP",
+    //     "requestBody": {
+    //       "required": true,
+    //       "content": {
+    //         "application/json": {
+    //           "schema": {
+    //             "type": "object",
+    //             "properties": {
+    //               "email": { "type": "string", "example": "naveen@gmail.com" },
+    //               "otp": { "type": "string", "example": "1234" },
+    //               "newPassword": { "type": "string", "example": "newpass123" },
+    //               "confirmPassword": { "type": "string", "example": "newpass123" }
+    //             },
+    //             "required": ["email", "otp", "newPassword", "confirmPassword"]
+    //           }
+    //         }
+    //       }
+    //     },
+    //     "responses": {
+    //       "200": { "description": "Password reset successfully ✅" },
+    //       "400": { "description": "Invalid or expired OTP" },
+    //       "404": { "description": "User not found" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/getAllCustomers": {
+    //   "get": {
+    //     "tags": ["Customer"],
+    //     "summary": "Get all customers",
+    //     "responses": {
+    //       "200": { "description": "All customers fetched successfully" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/getCustomerById/{id}": {
+    //   "get": {
+    //     "tags": ["Customer"],
+    //     "summary": "Get customer by ID",
+    //     "parameters": [
+    //       {
+    //         "name": "id",
+    //         "in": "path",
+    //         "required": true,
+    //         "schema": { "type": "string" },
+    //         "example": "652a1f3e2b9871dabc123456"
+    //       }
+    //     ],
+    //     "responses": {
+    //       "200": { "description": "Customer fetched successfully" },
+    //       "404": { "description": "Customer not found" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/updateCustomer/{id}": {
+    //   "put": {
+    //     "tags": ["Customer"],
+    //     "summary": "Update customer details",
+    //     "parameters": [
+    //       {
+    //         "name": "id",
+    //         "in": "path",
+    //         "required": true,
+    //         "schema": { "type": "string" },
+    //         "example": "652a1f3e2b9871dabc123456"
+    //       }
+    //     ],
+    //     "requestBody": {
+    //       "required": true,
+    //       "content": {
+    //         "application/json": {
+    //           "schema": {
+    //             "type": "object",
+    //             "properties": {
+    //               "fullName": { "type": "string", "example": "Naveen Updated" },
+    //               "phoneNumber": { "type": "string", "example": "9998887770" },
+    //               "password": { "type": "string", "example": "newpassword123" }
+    //             }
+    //           }
+    //         }
+    //       }
+    //     },
+    //     "responses": {
+    //       "200": { "description": "Customer updated successfully" },
+    //       "404": { "description": "Customer not found" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
+    // "/User/deleteCustomer/{id}": {
+    //   "delete": {
+    //     "tags": ["Customer"],
+    //     "summary": "Delete customer by ID",
+    //     "parameters": [
+    //       {
+    //         "name": "id",
+    //         "in": "path",
+    //         "required": true,
+    //         "schema": { "type": "string" },
+    //         "example": "652a1f3e2b9871dabc123456"
+    //       }
+    //     ],
+    //     "responses": {
+    //       "200": { "description": "Customer deleted successfully" },
+    //       "404": { "description": "Customer not found" },
+    //       "500": { "description": "Server error" }
+    //     }
+    //   }
+    // },
