@@ -88,30 +88,30 @@ const getOrderedItems = async (req, res) => {
 };
 
 // -------------------- UPDATE ORDER --------------------
-const updateOrder = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { cartItems, address, payment, orderStatus } = req.body;
+// const updateOrder = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { cartItems, address, payment, orderStatus } = req.body;
 
-    const updatedOrder = await CustomerShopping.findByIdAndUpdate(
-      id,
-      { cartItems, address, payment, orderStatus },
-      { new: true }
-    );
+//     const updatedOrder = await CustomerShopping.findByIdAndUpdate(
+//       id,
+//       { cartItems, address, payment, orderStatus },
+//       { new: true }
+//     );
 
-    if (!updatedOrder) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+//     if (!updatedOrder) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
 
-    res.status(200).json({
-      message: "Order updated successfully",
-      order: updatedOrder,
-    });
-  } catch (error) {
-    console.error("Error updating order:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+//     res.status(200).json({
+//       message: "Order updated successfully",
+//       order: updatedOrder,
+//     });
+//   } catch (error) {
+//     console.error("Error updating order:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
 
 // -------------------- DELETE ORDER --------------------
 const deleteOrder = async (req, res) => {
@@ -135,7 +135,7 @@ export default {
   getAllOrders,
   getOrderById,
   getOrderedItems,
-  updateOrder,
+  // updateOrder,
   deleteOrder,
 };
   

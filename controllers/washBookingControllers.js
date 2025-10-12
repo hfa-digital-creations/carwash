@@ -1,16 +1,18 @@
 import Booking from "../models/washBookingModels.js";
 import Customer from "../models/customerModels.js";
+import WashService from "../models/washServiceType.js";
 import mongoose from "mongoose";
 
-
 // -------------------- CREATE BOOKING --------------------
+
+
 const createBooking = async (req, res) => {
   try {
     const {
       customerId,
       vehicleType,
       vehicleNumber,
-      washPackage,
+      washPackage, // this is now an object
       serviceType,
       address,
       bookingDate,
@@ -19,40 +21,34 @@ const createBooking = async (req, res) => {
       paymentStatus
     } = req.body;
 
-    if (!customerId || !vehicleType || !vehicleNumber || !washPackage || !serviceType) {
+    if (!customerId || !vehicleType || !vehicleNumber || !washPackage.packageName) {
       return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    if (!["Normal", "Express"].includes(serviceType)) {
-      return res.status(400).json({ message: "Invalid service type" });
     }
 
     const customerExists = await Customer.findById(customerId);
     if (!customerExists) return res.status(400).json({ message: "Customer not found" });
 
-    if (!address || !address.street || !address.city || !address.pincode) {
-      return res.status(400).json({ message: "Address is required" });
-    }
-
-    if (serviceType === "Express" && (!bookingDate || !bookingTime)) {
-      return res.status(400).json({ message: "Date and time are required for Express service" });
-    }
-
+    // ✅ No need to find again from DB if full object is sent
     const newBooking = new Booking({
       customerId,
       vehicleType,
       vehicleNumber,
-      washPackage,
+      washPackage: {
+        packageName: washPackage.packageName,
+        price: washPackage.price,
+        description: washPackage.description,
+        features: washPackage.features,
+      },
       serviceType,
       address,
-      bookingDate: serviceType === "Express" ? bookingDate : null,
-      bookingTime: serviceType === "Express" ? bookingTime : null,
+      bookingDate: bookingDate || null,
+      bookingTime: bookingTime || null,
       paymentMethod,
       paymentStatus
     });
 
     await newBooking.save();
-    res.status(201).json({ message: "Booking created successfully", booking: newBooking });
+    res.status(201).json({ message: "Booking created successfully ✅", booking: newBooking });
 
   } catch (error) {
     console.error("Error creating booking:", error.message);
@@ -60,25 +56,30 @@ const createBooking = async (req, res) => {
   }
 };
 
+
+
 // -------------------- GET ALL BOOKINGS --------------------
-  const getAllWashBookings = async (req, res) => {
+const getAllWashBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ createdAt: -1 });
+    const bookings = await Booking.find()
+      .populate("customerId", "fullName email phoneNumber")
+      .sort({ createdAt: -1 });
 
     if (!bookings || bookings.length === 0) {
       return res.status(404).json({ message: "No bookings found" });
     }
 
-    res.status(200).json({ message: "All wash bookings fetched successfully", bookings });
+    res.status(200).json({
+      message: "All wash bookings fetched successfully",
+      bookings
+    });
   } catch (error) {
-    console.error("Error fetching bookings:", error); // log full error
+    console.error("Error fetching bookings:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-
 // -------------------- GET BOOKING BY ID --------------------
-
 const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -90,25 +91,29 @@ const getBookingById = async (req, res) => {
     const booking = await Booking.findById(id)
       .populate("customerId", "fullName email phoneNumber");
 
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
-    res.status(200).json({ message: "Booking fetched successfully", booking });
+    res.status(200).json({
+      message: "Booking fetched successfully",
+      booking
+    });
   } catch (error) {
     console.error("Error fetching booking:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 // -------------------- GET BOOKINGS BY CUSTOMER ID --------------------
 const getBookingsByCustomerId = async (req, res) => {
   try {
     const { customerId } = req.params;
 
-    // Validate customerId
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
       return res.status(400).json({ message: "Invalid customer ID" });
     }
 
-    // Find bookings for this customer & populate customer info
     const bookings = await Booking.find({ customerId })
       .populate("customerId", "fullName email phoneNumber")
       .sort({ createdAt: -1 });
@@ -117,14 +122,15 @@ const getBookingsByCustomerId = async (req, res) => {
       return res.status(404).json({ message: "No bookings found for this customer" });
     }
 
-    res.status(200).json({ message: "Bookings fetched successfully", bookings });
+    res.status(200).json({
+      message: "Bookings fetched successfully",
+      bookings
+    });
   } catch (error) {
     console.error("Error fetching bookings by customer ID:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-
 
 // -------------------- UPDATE BOOKING --------------------
 const updateBooking = async (req, res) => {
@@ -132,11 +138,30 @@ const updateBooking = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    // If washPackage name is changed, fetch full service details
+    if (updateData.washPackage && typeof updateData.washPackage === "string") {
+      const service = await WashService.findOne({ packageName: updateData.washPackage });
+      if (!service) {
+        return res.status(400).json({ message: "Invalid wash package" });
+      }
+      updateData.washPackage = {
+        packageName: service.packageName,
+        price: service.price,
+        description: service.description,
+        features: service.features
+      };
+    }
+
     const updatedBooking = await Booking.findByIdAndUpdate(id, updateData, { new: true });
 
-    if (!updatedBooking) return res.status(404).json({ message: "Booking not found" });
+    if (!updatedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
-    res.status(200).json({ message: "Booking updated successfully", booking: updatedBooking });
+    res.status(200).json({
+      message: "Booking updated successfully",
+      booking: updatedBooking
+    });
   } catch (error) {
     console.error("Error updating booking:", error.message);
     res.status(500).json({ message: "Server error" });
@@ -149,9 +174,11 @@ const deleteBooking = async (req, res) => {
     const { id } = req.params;
     const deletedBooking = await Booking.findByIdAndDelete(id);
 
-    if (!deletedBooking) return res.status(404).json({ message: "Booking not found" });
+    if (!deletedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
-    res.status(200).json({ message: "Booking deleted successfully" });
+    res.status(200).json({ message: "Booking deleted successfully ✅" });
   } catch (error) {
     console.error("Error deleting booking:", error.message);
     res.status(500).json({ message: "Server error" });

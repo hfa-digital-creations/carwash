@@ -1,5 +1,5 @@
 import Rating from "../models/ratingModels.js";
-import ServiceEmployee from "../models/ServiceEmployee.js";
+import ServiceEmployee from "../models/washerEmpRegistrationModel.js";
 import mongoose from "mongoose";
 
 // Create rating
@@ -37,7 +37,7 @@ const createRating = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
+ 
 // Get all ratings for an employee
 const getRatingsByEmployee = async (req, res) => {
   try {

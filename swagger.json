@@ -18,7 +18,7 @@
       "/User/registerUser": {
         "post": {
           "tags": [
-            "User"
+            "Customer"
           ],
           "summary": "Register a new user",
           "requestBody": {
@@ -26,36 +26,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fullName": {
-                      "type": "string",
-                      "example": "Naveen"
-                    },
-                    "email": {
-                      "type": "string",
-                      "example": "naveen@example.com"
-                    },
-                    "phoneNumber": {
-                      "type": "string",
-                      "example": "9876543210"
-                    },
-                    "password": {
-                      "type": "string",
-                      "example": "password123"
-                    },
-                    "confirmPassword": {
-                      "type": "string",
-                      "example": "password123"
-                    }
-                  },
-                  "required": [
-                    "fullName",
-                    "email",
-                    "phoneNumber",
-                    "password",
-                    "confirmPassword"
-                  ]
+                  "$ref": "#/components/schemas/CustomerRegister"
                 }
               }
             }
@@ -65,10 +36,412 @@
               "description": "User registered successfully"
             },
             "400": {
-              "description": "Missing or invalid fields / User already exists"
+              "description": "Bad request / Missing fields"
             },
             "500": {
               "description": "Server error"
+            }
+          }
+        }
+      },
+      "/User/login": {
+        "post": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Login user",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerLogin"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Login successful"
+            },
+            "400": {
+              "description": "Invalid credentials"
+            },
+            "404": {
+              "description": "User not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/User/getAllUsers": {
+        "get": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Get all users",
+          "responses": {
+            "200": {
+              "description": "List of users fetched successfully"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/User/getUserById/{id}": {
+        "get": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Get user by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "User ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User fetched successfully"
+            },
+            "404": {
+              "description": "User not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/User/updateUser/{id}": {
+        "put": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Update a user by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "User ID"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerUpdate"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "User updated successfully"
+            },
+            "404": {
+              "description": "User not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/User/deleteUser/{id}": {
+        "delete": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Delete a user by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "User ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User deleted successfully"
+            },
+            "404": {
+              "description": "User not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/banner/createCustomerBanner": {
+        "post": {
+          "tags": [
+            "CustomerBanner"
+          ],
+          "summary": "Create a new banner",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Banner"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Banner created successfully"
+            },
+            "500": {
+              "description": "Error creating banner"
+            }
+          }
+        }
+      },
+      "/banner/getallCustomerBanner": {
+        "get": {
+          "tags": [
+            "CustomerBanner"
+          ],
+          "summary": "Get all banners",
+          "responses": {
+            "200": {
+              "description": "List of all banners"
+            },
+            "500": {
+              "description": "Error fetching banners"
+            }
+          }
+        }
+      },
+      "/banner/updateCustomerBanner/{id}": {
+        "put": {
+          "tags": [
+            "CustomerBanner"
+          ],
+          "summary": "Update a banner by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Banner ID"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Banner"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Banner updated successfully"
+            },
+            "404": {
+              "description": "Banner not found"
+            },
+            "500": {
+              "description": "Error updating banner"
+            }
+          }
+        }
+      },
+      "/banner/deleteCustomerBanner/{id}": {
+        "delete": {
+          "tags": [
+            "CustomerBanner"
+          ],
+          "summary": "Delete a banner by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Banner ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Banner deleted successfully"
+            },
+            "404": {
+              "description": "Banner not found"
+            },
+            "500": {
+              "description": "Error deleting banner"
+            }
+          }
+        }
+      },
+      "/service/create": {
+        "post": {
+          "tags": [
+            "ServiceType"
+          ],
+          "summary": "Create a new wash service type",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WashService"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Service created successfully"
+            },
+            "500": {
+              "description": "Error creating service"
+            }
+          }
+        }
+      },
+      "/service/getall": {
+        "get": {
+          "tags": [
+            "ServiceType"
+          ],
+          "summary": "Get all wash service types",
+          "responses": {
+            "200": {
+              "description": "List of all services"
+            },
+            "500": {
+              "description": "Error fetching services"
+            }
+          }
+        }
+      },
+      "/service/{id}": {
+        "get": {
+          "tags": [
+            "ServiceType"
+          ],
+          "summary": "Get a service type by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Service ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Service fetched successfully"
+            },
+            "404": {
+              "description": "Service not found"
+            },
+            "500": {
+              "description": "Error fetching service"
+            }
+          }
+        }
+      },
+      "/service/update/{id}": {
+        "put": {
+          "tags": [
+            "ServiceType"
+          ],
+          "summary": "Update a service type by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Service ID"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WashService"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Service updated successfully"
+            },
+            "404": {
+              "description": "Service not found"
+            },
+            "500": {
+              "description": "Error updating service"
+            }
+          }
+        }
+      },
+      "/service/delete/{id}": {
+        "delete": {
+          "tags": [
+            "ServiceType"
+          ],
+          "summary": "Delete a service type by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Service ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Service deleted successfully"
+            },
+            "404": {
+              "description": "Service not found"
+            },
+            "500": {
+              "description": "Error deleting service"
             }
           }
         }
@@ -84,98 +457,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "customerId": {
-                      "type": "string",
-                      "example": "68e9eb5372ffcf9a50ca0d03"
-                    },
-                    "vehicleType": {
-                      "type": "string",
-                      "enum": [
-                        "Car",
-                        "Bike"
-                      ],
-                      "example": "Bike"
-                    },
-                    "vehicleNumber": {
-                      "type": "string",
-                      "example": "TN01AB1234"
-                    },
-                    "washPackage": {
-                      "type": "string",
-                      "enum": [
-                        "Basic",
-                        "Standard",
-                        "Premium"
-                      ],
-                      "example": "Premium"
-                    },
-                    "serviceType": {
-                      "type": "string",
-                      "enum": [
-                        "Normal",
-                        "Express"
-                      ],
-                      "example": "Normal"
-                    },
-                    "address": {
-                      "type": "object",
-                      "properties": {
-                        "street": {
-                          "type": "string",
-                          "example": "12 Gandhi Street"
-                        },
-                        "city": {
-                          "type": "string",
-                          "example": "Chennai"
-                        },
-                        "pincode": {
-                          "type": "string",
-                          "example": "600001"
-                        }
-                      },
-                      "required": [
-                        "street",
-                        "city",
-                        "pincode"
-                      ]
-                    },
-                    "bookingDate": {
-                      "type": "string",
-                      "format": "date",
-                      "example": "2025-10-12"
-                    },
-                    "bookingTime": {
-                      "type": "string",
-                      "example": "10:30 AM"
-                    },
-                    "paymentMethod": {
-                      "type": "string",
-                      "enum": [
-                        "Cash",
-                        "UPI",
-                        "Card"
-                      ],
-                      "example": "UPI"
-                    },
-                    "paymentStatus": {
-                      "type": "string",
-                      "enum": [
-                        "Pending",
-                        "Completed"
-                      ],
-                      "example": "Paid"
-                    }
-                  },
-                  "required": [
-                    "customerId",
-                    "vehicleType",
-                    "vehicleNumber",
-                    "washPackage",
-                    "serviceType",
-                    "address"
-                  ]
+                  "$ref": "#/components/schemas/WashBooking"
                 }
               }
             }
@@ -297,21 +579,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "washPackage": {
-                      "type": "string",
-                      "example": "Deluxe"
-                    },
-                    "serviceType": {
-                      "type": "string",
-                      "example": "Normal"
-                    },
-                    "paymentStatus": {
-                      "type": "string",
-                      "example": "Pending"
-                    }
-                  }
+                  "$ref": "#/components/schemas/WashBookingUpdate"
                 }
               }
             }
@@ -370,120 +638,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "customerId": {
-                      "type": "string",
-                      "example": "68e9eb5372ffcf9a50ca0d03"
-                    },
-                    "cartItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "productId": {
-                            "type": "string",
-                            "example": "652a1f3e2b9871dabc123456"
-                          },
-                          "productName": {
-                            "type": "string",
-                            "example": "Car Wax"
-                          },
-                          "quantity": {
-                            "type": "integer",
-                            "example": 2
-                          },
-                          "price": {
-                            "type": "number",
-                            "example": 500
-                          },
-                          "total": {
-                            "type": "number",
-                            "example": 1000
-                          }
-                        }
-                      }
-                    },
-                    "address": {
-                      "type": "object",
-                      "properties": {
-                        "street": {
-                          "type": "string",
-                          "example": "12 Gandhi Street"
-                        },
-                        "city": {
-                          "type": "string",
-                          "example": "Chennai"
-                        },
-                        "pincode": {
-                          "type": "string",
-                          "example": "600001"
-                        },
-                        "maxCars": {
-                          "type": "integer",
-                          "example": 1
-                        },
-                        "location": {
-                          "type": "object",
-                          "properties": {
-                            "type": {
-                              "type": "string",
-                              "example": "Point"
-                            },
-                            "coordinates": {
-                              "type": "array",
-                              "items": {
-                                "type": "number"
-                              },
-                              "example": [
-                                80.2707,
-                                13.0827
-                              ]
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "payment": {
-                      "type": "object",
-                      "properties": {
-                        "method": {
-                          "type": "string",
-                          "enum": [
-                            "COD",
-                            "CreditCard",
-                            "DebitCard",
-                            "UPI",
-                            "NetBanking"
-                          ],
-                          "example": "UPI"
-                        },
-                        "transactionId": {
-                          "type": "string",
-                          "example": "TXN123456"
-                        },
-                        "amount": {
-                          "type": "number",
-                          "example": 1000
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "Pending",
-                            "Completed",
-                            "Failed"
-                          ],
-                          "example": "Pending"
-                        }
-                      }
-                    }
-                  },
-                  "required": [
-                    "customerId",
-                    "cartItems",
-                    "address",
-                    "payment"
-                  ]
+                  "$ref": "#/components/schemas/Order"
                 }
               }
             }
@@ -602,27 +757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "cartItems": {
-                      "type": "array"
-                    },
-                    "address": {
-                      "type": "object"
-                    },
-                    "payment": {
-                      "type": "object"
-                    },
-                    "orderStatus": {
-                      "type": "string",
-                      "enum": [
-                        "Processing",
-                        "Shipped",
-                        "Delivered",
-                        "Cancelled"
-                      ]
-                    }
-                  }
+                  "$ref": "#/components/schemas/OrderUpdate"
                 }
               }
             }
@@ -681,132 +816,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "customerId": {
-                      "type": "string",
-                      "example": "6710d40ef8c1f9a4a5b6c123"
-                    },
-                    "serviceItems": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "serviceId": {
-                            "type": "string",
-                            "example": "6710d4f1b3a9a0a6a6b8e124"
-                          },
-                          "productImage": {
-                            "type": "string",
-                            "example": "https://example.com/image.jpg"
-                          },
-                          "productName": {
-                            "type": "string",
-                            "example": "AC Cleaning"
-                          },
-                          "description": {
-                            "type": "string",
-                            "example": "Full AC cleaning and service"
-                          },
-                          "serviceCharges": {
-                            "type": "number",
-                            "example": 600
-                          },
-                          "serviceStore": {
-                            "type": "object",
-                            "properties": {
-                              "storeName": {
-                                "type": "string",
-                                "example": "CoolCare Services"
-                              },
-                              "storeAddress": {
-                                "type": "string",
-                                "example": "123 Anna Nagar, Chennai"
-                              },
-                              "contactNumber": {
-                                "type": "string",
-                                "example": "9876543210"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "address": {
-                      "type": "object",
-                      "properties": {
-                        "street": {
-                          "type": "string",
-                          "example": "No.10, Gandhi Street"
-                        },
-                        "city": {
-                          "type": "string",
-                          "example": "Chennai"
-                        },
-                        "pincode": {
-                          "type": "string",
-                          "example": "600040"
-                        },
-                        "location": {
-                          "type": "object",
-                          "properties": {
-                            "type": {
-                              "type": "string",
-                              "example": "Point"
-                            },
-                            "coordinates": {
-                              "type": "array",
-                              "items": {
-                                "type": "number"
-                              },
-                              "example": [
-                                80.2707,
-                                13.0827
-                              ]
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "date": {
-                      "type": "string",
-                      "format": "date",
-                      "example": "2025-10-12"
-                    },
-                    "time": {
-                      "type": "string",
-                      "example": "14:30"
-                    },
-                    "payment": {
-                      "type": "object",
-                      "properties": {
-                        "method": {
-                          "type": "string",
-                          "example": "Online"
-                        },
-                        "transactionId": {
-                          "type": "string",
-                          "example": "TXN12345ABC"
-                        },
-                        "amount": {
-                          "type": "number",
-                          "example": 600
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "Pending"
-                        }
-                      }
-                    }
-                  },
-                  "required": [
-                    "customerId",
-                    "serviceItems",
-                    "address",
-                    "date",
-                    "time",
-                    "payment"
-                  ]
+                  "$ref": "#/components/schemas/ServiceBooking"
                 }
               }
             }
@@ -925,14 +935,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "example": {
-                    "serviceStatus": "Processing",
-                    "payment": {
-                      "status": "Completed",
-                      "transactionId": "TXN12345ABC"
-                    }
-                  }
+                  "$ref": "#/components/schemas/ServiceBookingUpdate"
                 }
               }
             }
@@ -991,185 +994,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fullName": {
-                      "type": "string",
-                      "example": "John Doe"
-                    },
-                    "phone": {
-                      "type": "string",
-                      "example": "9876543210"
-                    },
-                    "email": {
-                      "type": "string",
-                      "example": "john@example.com"
-                    },
-                    "password": {
-                      "type": "string",
-                      "example": "password123"
-                    },
-                    "dateOfBirth": {
-                      "type": "string",
-                      "format": "date",
-                      "example": "1990-05-15"
-                    },
-                    "gender": {
-                      "type": "string",
-                      "enum": [
-                        "Male",
-                        "Female",
-                        "Other"
-                      ],
-                      "example": "Male"
-                    },
-                    "referralCode": {
-                      "type": "string",
-                      "example": "REF1234"
-                    },
-                    "serviceCategories": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "example": [
-                        "Washing",
-                        "Repair"
-                      ]
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "Washing Personnel",
-                        "Delivery Person",
-                        "Repair Service Technician",
-                        "Product Seller"
-                      ],
-                      "example": "Washing Personnel"
-                    },
-                    "address": {
-                      "type": "object",
-                      "properties": {
-                        "street": {
-                          "type": "string",
-                          "example": "123 Anna Street"
-                        },
-                        "city": {
-                          "type": "string",
-                          "example": "Chennai"
-                        },
-                        "state": {
-                          "type": "string",
-                          "example": "Tamil Nadu"
-                        },
-                        "postalCode": {
-                          "type": "string",
-                          "example": "600040"
-                        },
-                        "country": {
-                          "type": "string",
-                          "example": "India"
-                        },
-                        "location": {
-                          "type": "object",
-                          "properties": {
-                            "type": {
-                              "type": "string",
-                              "example": "Point"
-                            },
-                            "coordinates": {
-                              "type": "array",
-                              "items": {
-                                "type": "number"
-                              },
-                              "example": [
-                                80.2707,
-                                13.0827
-                              ]
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "emergencyContact": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string",
-                          "example": "Jane Doe"
-                        },
-                        "phone": {
-                          "type": "string",
-                          "example": "9876543211"
-                        }
-                      }
-                    },
-                    "vehicle": {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "example": "Bike"
-                        },
-                        "model": {
-                          "type": "string",
-                          "example": "Honda Activa"
-                        },
-                        "licensePlate": {
-                          "type": "string",
-                          "example": "TN01AB1234"
-                        },
-                        "registrationCertificate": {
-                          "type": "string",
-                          "example": "https://example.com/rc.pdf"
-                        },
-                        "drivingLicense": {
-                          "type": "string",
-                          "example": "https://example.com/dl.pdf"
-                        },
-                        "documentVerified": {
-                          "type": "boolean",
-                          "example": false
-                        }
-                      }
-                    },
-                    "bankDetails": {
-                      "type": "object",
-                      "properties": {
-                        "accountHolderName": {
-                          "type": "string",
-                          "example": "John Doe"
-                        },
-                        "accountNumber": {
-                          "type": "string",
-                          "example": "1234567890"
-                        },
-                        "ifscCode": {
-                          "type": "string",
-                          "example": "SBIN0001234"
-                        },
-                        "aadhaarCard": {
-                          "type": "string",
-                          "example": "https://example.com/aadhaar.pdf"
-                        }
-                      }
-                    },
-                    "termsAccepted": {
-                      "type": "boolean",
-                      "example": true
-                    }
-                  },
-                  "required": [
-                    "fullName",
-                    "phone",
-                    "email",
-                    "password",
-                    "dateOfBirth",
-                    "gender",
-                    "role",
-                    "address",
-                    "emergencyContact"
-                  ]
+                  "$ref": "#/components/schemas/WasherEmployee"
                 }
               }
             }
@@ -1258,7 +1083,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WasherEmployee"
                 }
               }
             }
@@ -1307,11 +1132,790 @@
         }
       }
     },
-    "components": {},
+    "components": {
+      "schemas": {
+        "CustomerRegister": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "example": "John Doe"
+            },
+            "email": {
+              "type": "string",
+              "example": "john@example.com"
+            },
+            "phoneNumber": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "password": {
+              "type": "string",
+              "example": "123456"
+            },
+            "confirmPassword": {
+              "type": "string",
+              "example": "123456"
+            }
+          },
+          "required": [
+            "fullName",
+            "email",
+            "phoneNumber",
+            "password",
+            "confirmPassword"
+          ]
+        },
+        "CustomerLogin": {
+          "type": "object",
+          "properties": {
+            "emailOrPhone": {
+              "type": "string",
+              "example": "john@example.com"
+            },
+            "password": {
+              "type": "string",
+              "example": "123456"
+            }
+          },
+          "required": [
+            "emailOrPhone",
+            "password"
+          ]
+        },
+        "CustomerUpdate": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "example": "John Doe Updated"
+            },
+            "email": {
+              "type": "string",
+              "example": "johnnew@example.com"
+            },
+            "phoneNumber": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "password": {
+              "type": "string",
+              "example": "newpassword"
+            }
+          }
+        },
+        "Banner": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "example": "Car Wash"
+            },
+            "description": {
+              "type": "string",
+              "example": "Premium car washing service at your doorstep."
+            },
+            "priceTag": {
+              "type": "number",
+              "example": 10
+            },
+            "image": {
+              "type": "string",
+              "example": "https://example.com/car-banner.jpg"
+            }
+          },
+          "required": [
+            "title",
+            "description",
+            "priceTag",
+            "image"
+          ]
+        },
+        "WashService": {
+          "type": "object",
+          "properties": {
+            "packageName": {
+              "type": "string",
+              "example": "Basic Wash"
+            },
+            "price": {
+              "type": "number",
+              "example": 15
+            },
+            "description": {
+              "type": "string",
+              "example": "Basic car wash including exterior cleaning"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": [
+                "Exterior cleaning",
+                "Tire wash",
+                "Window cleaning"
+              ]
+            }
+          },
+          "required": [
+            "packageName",
+            "price",
+            "description"
+          ]
+        },
+        "WashBooking": {
+          "type": "object",
+          "properties": {
+            "customerId": {
+              "type": "string",
+              "example": "68e9eb5372ffcf9a50ca0d03"
+            },
+            "vehicleType": {
+              "type": "string",
+              "enum": [
+                "Car",
+                "Bike"
+              ],
+              "example": "Bike"
+            },
+            "vehicleNumber": {
+              "type": "string",
+              "example": "TN01AB1234"
+            },
+            "washPackage": {
+              "type": "object",
+              "properties": {
+                "packageName": {
+                  "type": "string",
+                  "example": "Premium"
+                },
+                "price": {
+                  "type": "number",
+                  "example": 20
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Premium car wash including exterior and interior cleaning"
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "Exterior cleaning",
+                    "Tire wash",
+                    "Window cleaning"
+                  ]
+                }
+              },
+              "required": [
+                "packageName",
+                "price",
+                "features"
+              ]
+            },
+            "serviceType": {
+              "type": "string",
+              "enum": [
+                "Normal",
+                "Express"
+              ],
+              "example": "Normal"
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "street": {
+                  "type": "string",
+                  "example": "12 Gandhi Street"
+                },
+                "city": {
+                  "type": "string",
+                  "example": "Chennai"
+                },
+                "pincode": {
+                  "type": "string",
+                  "example": "600001"
+                }
+              },
+              "required": [
+                "street",
+                "city",
+                "pincode"
+              ]
+            },
+            "bookingDate": {
+              "type": "string",
+              "format": "date",
+              "example": "2025-10-12"
+            },
+            "bookingTime": {
+              "type": "string",
+              "example": "10:30 AM"
+            },
+            "paymentMethod": {
+              "type": "string",
+              "enum": [
+                "Cash",
+                "UPI",
+                "Card"
+              ],
+              "example": "UPI"
+            },
+            "paymentStatus": {
+              "type": "string",
+              "enum": [
+                "Pending",
+                "Completed"
+              ],
+              "example": "Paid"
+            }
+          },
+          "required": [
+            "customerId",
+            "vehicleType",
+            "vehicleNumber",
+            "washPackage",
+            "serviceType",
+            "address"
+          ]
+        },
+        "WashBookingUpdate": {
+          "type": "object",
+          "properties": {
+            "washPackage": {
+              "type": "string",
+              "example": "Deluxe"
+            },
+            "serviceType": {
+              "type": "string",
+              "example": "Normal"
+            },
+            "paymentStatus": {
+              "type": "string",
+              "example": "Pending"
+            }
+          }
+        },
+        "Order": {
+          "type": "object",
+          "properties": {
+            "customerId": {
+              "type": "string",
+              "example": "68e9eb5372ffcf9a50ca0d03"
+            },
+            "cartItems": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CartItem"
+              }
+            },
+            "address": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "payment": {
+              "$ref": "#/components/schemas/Payment"
+            }
+          },
+          "required": [
+            "customerId",
+            "cartItems",
+            "address",
+            "payment"
+          ]
+        },
+        "CartItem": {
+          "type": "object",
+          "properties": {
+            "productId": {
+              "type": "string",
+              "example": "652a1f3e2b9871dabc123456"
+            },
+            "productName": {
+              "type": "string",
+              "example": "Car Wax"
+            },
+            "productDescription": {
+              "type": "string",
+              "example": "High-quality car wax that provides long-lasting shine and protection"
+            },
+            "quantity": {
+              "type": "integer",
+              "example": 2
+            },
+            "price": {
+              "type": "number",
+              "example": 500
+            },
+            "total": {
+              "type": "number",
+              "example": 1000
+            }
+          }
+        },
+        "Address": {
+          "type": "object",
+          "properties": {
+            "street": {
+              "type": "string",
+              "example": "12 Gandhi Street"
+            },
+            "city": {
+              "type": "string",
+              "example": "Chennai"
+            },
+            "pincode": {
+              "type": "string",
+              "example": "600001"
+            },
+            "maxCars": {
+              "type": "integer",
+              "example": 1
+            },
+            "location": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "Point"
+                },
+                "coordinates": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "example": [
+                    80.2707,
+                    13.0827
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "Payment": {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "COD",
+                "CreditCard",
+                "DebitCard",
+                "UPI",
+                "NetBanking"
+              ],
+              "example": "UPI"
+            },
+            "transactionId": {
+              "type": "string",
+              "example": "TXN123456"
+            },
+            "amount": {
+              "type": "number",
+              "example": 1000
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "Pending",
+                "Completed",
+                "Failed"
+              ],
+              "example": "Pending"
+            }
+          }
+        },
+        "OrderUpdate": {
+          "type": "object",
+          "properties": {
+            "cartItems": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CartItem"
+              }
+            },
+            "address": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "payment": {
+              "$ref": "#/components/schemas/Payment"
+            },
+            "orderStatus": {
+              "type": "string",
+              "enum": [
+                "Processing",
+                "Shipped",
+                "Delivered",
+                "Cancelled"
+              ],
+              "example": "Processing"
+            }
+          }
+        },
+        "ServiceBooking": {
+          "type": "object",
+          "properties": {
+            "customerId": {
+              "type": "string",
+              "example": "6710d40ef8c1f9a4a5b6c123"
+            },
+            "serviceItems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "serviceId": {
+                    "type": "string",
+                    "example": "6710d4f1b3a9a0a6a6b8e124"
+                  },
+                  "productImage": {
+                    "type": "string",
+                    "example": "https://example.com/image.jpg"
+                  },
+                  "productName": {
+                    "type": "string",
+                    "example": "AC Cleaning"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Full AC cleaning and service"
+                  },
+                  "serviceCharges": {
+                    "type": "number",
+                    "example": 600
+                  },
+                  "serviceStore": {
+                    "type": "object",
+                    "properties": {
+                      "storeName": {
+                        "type": "string",
+                        "example": "CoolCare Services"
+                      },
+                      "storeAddress": {
+                        "type": "string",
+                        "example": "123 Anna Nagar, Chennai"
+                      },
+                      "contactNumber": {
+                        "type": "string",
+                        "example": "9876543210"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "street": {
+                  "type": "string",
+                  "example": "No.10, Gandhi Street"
+                },
+                "city": {
+                  "type": "string",
+                  "example": "Chennai"
+                },
+                "pincode": {
+                  "type": "string",
+                  "example": "600040"
+                },
+                "location": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "example": "Point"
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "example": [
+                        80.2707,
+                        13.0827
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "date": {
+              "type": "string",
+              "format": "date",
+              "example": "2025-10-12"
+            },
+            "time": {
+              "type": "string",
+              "example": "14:30"
+            },
+            "payment": {
+              "type": "object",
+              "properties": {
+                "method": {
+                  "type": "string",
+                  "example": "Online"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "example": "TXN12345ABC"
+                },
+                "amount": {
+                  "type": "number",
+                  "example": 600
+                },
+                "status": {
+                  "type": "string",
+                  "example": "Pending"
+                }
+              }
+            }
+          },
+          "required": [
+            "customerId",
+            "serviceItems",
+            "address",
+            "date",
+            "time",
+            "payment"
+          ]
+        },
+        "ServiceBookingUpdate": {
+          "type": "object",
+          "properties": {
+            "serviceStatus": {
+              "type": "string",
+              "example": "Processing"
+            },
+            "payment": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "Completed"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "example": "TXN12345ABC"
+                }
+              }
+            }
+          }
+        },
+        "WasherEmployee": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "example": "John Doe"
+            },
+            "phone": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "email": {
+              "type": "string",
+              "example": "john@example.com"
+            },
+            "password": {
+              "type": "string",
+              "example": "password123"
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "format": "date",
+              "example": "1990-05-15"
+            },
+            "gender": {
+              "type": "string",
+              "enum": [
+                "Male",
+                "Female",
+                "Other"
+              ],
+              "example": "Male"
+            },
+            "referralCode": {
+              "type": "string",
+              "example": "REF1234"
+            },
+            "serviceCategories": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": [
+                "Washing",
+                "Repair"
+              ]
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "Washing Personnel",
+                "Delivery Person",
+                "Repair Service Technician",
+                "Product Seller"
+              ],
+              "example": "Washing Personnel"
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "street": {
+                  "type": "string",
+                  "example": "123 Anna Street"
+                },
+                "city": {
+                  "type": "string",
+                  "example": "Chennai"
+                },
+                "state": {
+                  "type": "string",
+                  "example": "Tamil Nadu"
+                },
+                "postalCode": {
+                  "type": "string",
+                  "example": "600040"
+                },
+                "country": {
+                  "type": "string",
+                  "example": "India"
+                },
+                "location": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "example": "Point"
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "example": [
+                        80.2707,
+                        13.0827
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "emergencyContact": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "Jane Doe"
+                },
+                "phone": {
+                  "type": "string",
+                  "example": "9876543211"
+                }
+              }
+            },
+            "vehicle": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "Bike"
+                },
+                "model": {
+                  "type": "string",
+                  "example": "Honda Activa"
+                },
+                "licensePlate": {
+                  "type": "string",
+                  "example": "TN01AB1234"
+                },
+                "registrationCertificate": {
+                  "type": "string",
+                  "example": "https://example.com/rc.pdf"
+                },
+                "drivingLicense": {
+                  "type": "string",
+                  "example": "https://example.com/dl.pdf"
+                },
+                "documentVerified": {
+                  "type": "boolean",
+                  "example": false
+                }
+              }
+            },
+            "bankDetails": {
+              "type": "object",
+              "properties": {
+                "accountHolderName": {
+                  "type": "string",
+                  "example": "John Doe"
+                },
+                "accountNumber": {
+                  "type": "string",
+                  "example": "1234567890"
+                },
+                "ifscCode": {
+                  "type": "string",
+                  "example": "SBIN0001234"
+                },
+                "aadhaarCard": {
+                  "type": "string",
+                  "example": "https://example.com/aadhaar.pdf"
+                }
+              }
+            },
+            "termsAccepted": {
+              "type": "boolean",
+              "example": true
+            }
+          },
+          "required": [
+            "fullName",
+            "phone",
+            "email",
+            "password",
+            "dateOfBirth",
+            "gender",
+            "role",
+            "address",
+            "emergencyContact"
+          ]
+        }
+      }
+    },
     "tags": [
+      {
+        "name": "Customer",
+        "description": "Manage customer accounts"
+      },
+      {
+        "name": "CustomerBanner",
+        "description": "Manage banners for customers"
+      },
+      {
+        "name": "ServiceType",
+        "description": "Manage Wash Service Types"
+      },
       {
         "name": "Wash Booking",
         "description": "Manage car wash bookings"
+      },
+      {
+        "name": "CustomerShopping",
+        "description": "Manage customer shopping orders"
+      },
+      {
+        "name": "ServiceBooking",
+        "description": "Manage customer service booking orders"
+      },
+      {
+        "name": "WasherEmployee",
+        "description": "Manage WasherEmployee Registration"
       }
     ]
   }

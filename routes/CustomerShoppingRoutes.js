@@ -16,7 +16,7 @@ router.get("/getOrderById/:id", CustomerShoppingController.getOrderById);
 router.get("/getOrderedItems/:customerId", CustomerShoppingController.getOrderedItems);
 
 // Update order by ID
-router.put("/updateOrder/:id", CustomerShoppingController.updateOrder);
+// router.put("/updateOrder/:id", CustomerShoppingController.updateOrder);
 
 // Delete order by ID
 router.delete("/deleteOrder/:id", CustomerShoppingController.deleteOrder);

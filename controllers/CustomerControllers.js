@@ -1,7 +1,6 @@
 import Customer from "../models/customerModels.js";
-import bcrypt from "bcryptjs";
 
-// -------------------- Register User (No OTP) --------------------
+// -------------------- Register User --------------------
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, phoneNumber, password, confirmPassword } = req.body;
@@ -15,13 +14,11 @@ const registerUser = async (req, res) => {
     const existing = await Customer.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existing) return res.status(400).json({ message: "User already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = new Customer({
       fullName,
       email: email.toLowerCase(),
       phoneNumber,
-      password: hashedPassword,
+      password, // storing plain text
     });
 
     await newUser.save();
@@ -33,6 +30,86 @@ const registerUser = async (req, res) => {
   }
 };
 
+// -------------------- Login User --------------------
+const loginUser = async (req, res) => {
+  try {
+    const { emailOrPhone, password } = req.body;
+
+    if (!emailOrPhone || !password)
+      return res.status(400).json({ message: "Email/Phone and password are required" });
+
+    const user = await Customer.findOne({
+      $or: [{ email: emailOrPhone.toLowerCase() }, { phoneNumber: emailOrPhone }],
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.password !== password)
+      return res.status(400).json({ message: "Invalid credentials" });
+
+    res.status(200).json({ message: "Login successful ✅", user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// -------------------- Get All Users --------------------
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await Customer.find();
+    res.status(200).json({ users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// -------------------- Get User By ID --------------------
+const getUserById = async (req, res) => {
+  try {
+    const user = await Customer.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// -------------------- Update User --------------------
+const updateUser = async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const user = await Customer.findByIdAndUpdate(req.params.id, updates, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "User updated successfully ✅", user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// -------------------- Delete User --------------------
+const deleteUser = async (req, res) => {
+  try {
+    const user = await Customer.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "User deleted successfully ✅" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export default {
   registerUser,
+  loginUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
 };
