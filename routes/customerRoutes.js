@@ -12,7 +12,7 @@ router.post("/login", CustomerControllers.loginUser);
 // CRUD operations
 router.get("/getAllUsers", CustomerControllers.getAllUsers);
 router.get("/getUserById/:id", CustomerControllers.getUserById);
-router.put("/updateUser/:id", CustomerControllers.updateUser);
+router.put("/updateProfile/:id", CustomerControllers.updateProfile);
 router.delete("/deleteUser/:id", CustomerControllers.deleteUser);
 
 export default router;

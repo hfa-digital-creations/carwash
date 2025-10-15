@@ -19,6 +19,21 @@ const createAddress = async (req, res) => {
   }
 };
 
+// GET address by customerId
+const getAddressByCustomerId = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    const address = await Address.findOne({ userId: customerId });
+    if (!address) return res.status(404).json({ message: "Address not found for this customer" });
+
+    res.status(200).json({ address });
+  } catch (error) {
+    console.error("Error fetching address by customer:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // GET all addresses
 const getAddresses = async (req, res) => {
   try {
@@ -74,6 +89,7 @@ const deleteAddress = async (req, res) => {
 
 export default {
   createAddress,
+  getAddressByCustomerId,
   getAddresses,
   getAddressById,
   updateAddress,

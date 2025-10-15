@@ -5,18 +5,21 @@ import ratingController from "../controllers/ratingController.js";
 const router = express.Router();
 
 // Create a new rating (customer must be logged in)
-router.post("/",  ratingController.createRating);
+router.post("/createRating",  ratingController.createRating);
+
+// Get all ratings by a specific customer
+router.get("/getRatingsByCustomer/:customerId", ratingController.getRatingsByCustomer);
 
 // Get all ratings for a specific employee
-router.get("/employee/:employeeId", ratingController.getRatingsByEmployee);
+router.get("/getRatingsByEmployee/:employeeId", ratingController.getRatingsByEmployee);
 
 // Get employee summary (avg rating & count)
-router.get("/employee/:employeeId/summary", ratingController.getEmployeeSummary);
+router.get("/getEmployeeSummary/:employeeId/summary", ratingController.getEmployeeSummary);
 
 // Update a rating (only owner)
-router.put("/:ratingId",  ratingController.updateRating);
+router.put("/updateRating/:ratingId",  ratingController.updateRating);
 
 // Delete a rating (owner or admin)
-router.delete("/:ratingId",  ratingController.deleteRating);
+router.delete("/deleteRating/:ratingId",  ratingController.deleteRating);
 
 export default router;

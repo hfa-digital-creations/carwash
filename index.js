@@ -14,6 +14,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use("/uploads", express.static("uploads"));
+
 // ✅ Dynamic Swagger loader
 let swaggerDocument = JSON.parse(
   fs.readFileSync(new URL("./swagger.json", import.meta.url), "utf-8")

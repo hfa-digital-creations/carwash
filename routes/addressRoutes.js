@@ -6,6 +6,9 @@ const router = express.Router();
 // CREATE
 router.post("/createAddress", AddressController.createAddress);
 
+// Get address by customerId
+router.get("/getAddressByCustomerId/:customerId", AddressController.getAddressByCustomerId);
+
 // GET all
 router.get("/getAllAddress", AddressController.getAddresses);
 

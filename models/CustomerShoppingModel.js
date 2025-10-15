@@ -70,8 +70,16 @@ const customerShoppingSchema = new mongoose.Schema(
     payment: { type: paymentSchema, required: true },
     orderStatus: {
       type: String,
-      enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
+      enum: ["Processing", "Shipped","Item Picked Up", "Delivered", "Cancelled"],
       default: "Processing",
+    },
+    cancelReason: {
+      type: String,
+      default: null,
+    },
+    cancelledAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

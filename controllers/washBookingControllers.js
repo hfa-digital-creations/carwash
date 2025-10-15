@@ -3,32 +3,42 @@ import Customer from "../models/customerModels.js";
 import WashService from "../models/washServiceType.js";
 import mongoose from "mongoose";
 
+
 // -------------------- CREATE BOOKING --------------------
-
-
 const createBooking = async (req, res) => {
   try {
     const {
       customerId,
       vehicleType,
       vehicleNumber,
-      washPackage, // this is now an object
+      washPackage, // object
       serviceType,
       address,
       bookingDate,
       bookingTime,
+      expressCharge = 0,
+      advanceBookingCharge = 0,
+      couponCode = null,
+      discountAmount = 0,
       paymentMethod,
       paymentStatus
     } = req.body;
 
-    if (!customerId || !vehicleType || !vehicleNumber || !washPackage.packageName) {
+    // ✅ Validation
+    if (!customerId || !vehicleType || !vehicleNumber || !washPackage?.packageName) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // ✅ Check if customer exists
     const customerExists = await Customer.findById(customerId);
     if (!customerExists) return res.status(400).json({ message: "Customer not found" });
 
-    // ✅ No need to find again from DB if full object is sent
+    // ✅ Calculate total
+    const basePrice = washPackage.price || 0;
+    const totalBeforeDiscount = basePrice + expressCharge + advanceBookingCharge;
+    const totalAfterDiscount = Math.max(totalBeforeDiscount - discountAmount, 0); // avoid negative totals
+
+    // ✅ Create booking document
     const newBooking = new Booking({
       customerId,
       vehicleType,
@@ -41,20 +51,31 @@ const createBooking = async (req, res) => {
       },
       serviceType,
       address,
-      bookingDate: bookingDate || null,
-      bookingTime: bookingTime || null,
+      bookingDate,
+      bookingTime,
+      expressCharge,
+      advanceBookingCharge,
+      couponCode,
+      discountAmount,
+      totalAmount: totalAfterDiscount,
       paymentMethod,
       paymentStatus
     });
 
+    // ✅ Save booking
     await newBooking.save();
-    res.status(201).json({ message: "Booking created successfully ✅", booking: newBooking });
+
+    res.status(201).json({
+      message: "Booking created successfully ✅",
+      booking: newBooking
+    });
 
   } catch (error) {
     console.error("Error creating booking:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 
@@ -132,6 +153,45 @@ const getBookingsByCustomerId = async (req, res) => {
   }
 };
 
+// -------------------- CANCEL BOOKING --------------------
+const cancelBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if booking ID is valid
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid booking ID" });
+    }
+
+    // Find the booking
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    // If already canceled, stop further updates
+    if (booking.status === "Cancelled") {
+      return res.status(400).json({ message: "Booking is already cancelled" });
+    }
+
+    // Update booking status
+    booking.status = "Cancelled";
+    booking.cancelReason = req.body.reason || "Cancelled by user";
+    booking.cancelledAt = new Date();
+
+    await booking.save();
+
+    res.status(200).json({
+      message: "Booking cancelled successfully ✅",
+      booking,
+    });
+  } catch (error) {
+    console.error("Error cancelling booking:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 // -------------------- UPDATE BOOKING --------------------
 const updateBooking = async (req, res) => {
   try {
@@ -190,6 +250,7 @@ export default {
   getAllWashBookings,
   getBookingsByCustomerId,
   getBookingById,
+  cancelBooking,
   updateBooking,
   deleteBooking
 };

@@ -1,4 +1,5 @@
 import CustomerShopping from "../models/CustomerShoppingModel.js";
+import mongoose from "mongoose";
 
 // -------------------- CREATE ORDER --------------------
 const createOrder = async (req, res) => {
@@ -14,6 +15,7 @@ const createOrder = async (req, res) => {
       cartItems,
       address,
       payment,
+      orderStatus: "Pending",
     });
 
     await order.save();
@@ -87,31 +89,39 @@ const getOrderedItems = async (req, res) => {
   }
 };
 
-// -------------------- UPDATE ORDER --------------------
-// const updateOrder = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { cartItems, address, payment, orderStatus } = req.body;
+// -------------------- CANCEL ORDER --------------------
+const cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-//     const updatedOrder = await CustomerShopping.findByIdAndUpdate(
-//       id,
-//       { cartItems, address, payment, orderStatus },
-//       { new: true }
-//     );
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
 
-//     if (!updatedOrder) {
-//       return res.status(404).json({ message: "Order not found" });
-//     }
+    const order = await CustomerShopping.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-//     res.status(200).json({
-//       message: "Order updated successfully",
-//       order: updatedOrder,
-//     });
-//   } catch (error) {
-//     console.error("Error updating order:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// };
+    if (order.orderStatus === "Cancelled") {
+      return res.status(400).json({ message: "Order already cancelled" });
+    }
+
+    order.orderStatus = "Cancelled";
+    order.cancelReason = req.body.reason || "Cancelled by user";
+    order.cancelledAt = new Date();
+
+    await order.save();
+
+    res.status(200).json({
+      message: "Order cancelled successfully ✅",
+      order,
+    });
+  } catch (error) {
+    console.error("Error cancelling order:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // -------------------- DELETE ORDER --------------------
 const deleteOrder = async (req, res) => {
@@ -135,7 +145,6 @@ export default {
   getAllOrders,
   getOrderById,
   getOrderedItems,
-  // updateOrder,
+  cancelOrder,
   deleteOrder,
 };
-  

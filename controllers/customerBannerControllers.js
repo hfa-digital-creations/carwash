@@ -1,9 +1,15 @@
 import HomeBanner from "../models/CustomerHomeBannerModel.js";
+import { uploadBanner } from "../middlewares/multerConfig.js";
 
 // 🟢 Create Banner
- const createBanner = async (req, res) => {
+const createBanner = async (req, res) => {
   try {
-    const banner = await HomeBanner.create(req.body);
+    const bannerData = { ...req.body };
+    if (req.file) {
+      bannerData.image = req.file.path; // save the uploaded file path
+    }
+
+    const banner = await HomeBanner.create(bannerData);
     res.status(201).json({ message: "Banner created successfully", banner });
   } catch (error) {
     res.status(500).json({ message: "Error creating banner", error: error.message });
@@ -21,17 +27,20 @@ import HomeBanner from "../models/CustomerHomeBannerModel.js";
 };
 
 // 🟣 Update Banner
- const updateBanner = async (req, res) => {
+const updateBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedBanner = await HomeBanner.findByIdAndUpdate(id, req.body, {
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.image = req.file.path; // replace with new image if uploaded
+    }
+
+    const updatedBanner = await HomeBanner.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
 
-    if (!updatedBanner) {
-      return res.status(404).json({ message: "Banner not found" });
-    }
+    if (!updatedBanner) return res.status(404).json({ message: "Banner not found" });
 
     res.status(200).json({ message: "Banner updated successfully", updatedBanner });
   } catch (error) {

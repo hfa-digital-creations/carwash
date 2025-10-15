@@ -93,6 +93,42 @@ const getServiceOrderById = async (req, res) => {
   }
 };
 
+// -------------------- CANCEL SERVICE ORDER --------------------
+const cancelServiceOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { reason } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ message: "Order ID is required" });
+    }
+
+    const order = await CustomerService.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Service order not found" });
+    }
+
+    if (order.status === "Cancelled") {
+      return res.status(400).json({ message: "Order is already cancelled" });
+    }
+
+    order.status = "Cancelled";
+    order.cancelReason = reason || "Cancelled by user";
+    order.cancelledAt = new Date();
+
+    await order.save();
+
+    res.status(200).json({
+      message: "Service order cancelled successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Error cancelling service order:", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
 // -------------------- UPDATE SERVICE ORDER --------------------
 const updateServiceOrder = async (req, res) => {
   try {
@@ -144,6 +180,7 @@ export default {
   getAllServiceOrders,
   getServiceOrdersByCustomer,
   getServiceOrderById,
+  cancelServiceOrder,
   updateServiceOrder,
   deleteServiceOrder,
 };

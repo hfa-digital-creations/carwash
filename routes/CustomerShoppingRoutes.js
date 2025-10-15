@@ -18,6 +18,8 @@ router.get("/getOrderedItems/:customerId", CustomerShoppingController.getOrdered
 // Update order by ID
 // router.put("/updateOrder/:id", CustomerShoppingController.updateOrder);
 
+router.put("/cancelOrder/:id", CustomerShoppingController.cancelOrder);
+
 // Delete order by ID
 router.delete("/deleteOrder/:id", CustomerShoppingController.deleteOrder);
 
