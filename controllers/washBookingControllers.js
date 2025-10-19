@@ -1,6 +1,7 @@
 import Booking from "../models/washBookingModels.js";
 import Customer from "../models/customerModels.js";
 import WashService from "../models/washServiceType.js";
+import washerEmp from "../models/washerEmpRegistrationModel.js";
 import mongoose from "mongoose";
 
 
@@ -11,7 +12,7 @@ const createBooking = async (req, res) => {
       customerId,
       vehicleType,
       vehicleNumber,
-      washPackage, // object
+      washPackage,
       serviceType,
       address,
       bookingDate,
@@ -24,19 +25,30 @@ const createBooking = async (req, res) => {
       paymentStatus
     } = req.body;
 
-    // ✅ Validation
+    // ✅ Basic validation
     if (!customerId || !vehicleType || !vehicleNumber || !washPackage?.packageName) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // ✅ Check if customer exists
+    // ✅ Service type-based validation
+    if (serviceType === "Normal") {
+      if (!bookingDate || !bookingTime) {
+        return res.status(400).json({
+          message: "Booking date and time required for normal service",
+        });
+      }
+    }
+
+    // ✅ Customer check
     const customerExists = await Customer.findById(customerId);
-    if (!customerExists) return res.status(400).json({ message: "Customer not found" });
+    if (!customerExists)
+      return res.status(400).json({ message: "Customer not found" });
 
     // ✅ Calculate total
     const basePrice = washPackage.price || 0;
-    const totalBeforeDiscount = basePrice + expressCharge + advanceBookingCharge;
-    const totalAfterDiscount = Math.max(totalBeforeDiscount - discountAmount, 0); // avoid negative totals
+    const totalBeforeDiscount =
+      basePrice + expressCharge + advanceBookingCharge;
+    const totalAfterDiscount = Math.max(totalBeforeDiscount - discountAmount, 0);
 
     // ✅ Create booking document
     const newBooking = new Booking({
@@ -51,33 +63,28 @@ const createBooking = async (req, res) => {
       },
       serviceType,
       address,
-      bookingDate,
-      bookingTime,
+      bookingDate: serviceType === "Express" ? null : bookingDate || null,
+      bookingTime: serviceType === "Express" ? null : bookingTime || null,
       expressCharge,
       advanceBookingCharge,
       couponCode,
       discountAmount,
       totalAmount: totalAfterDiscount,
       paymentMethod,
-      paymentStatus
+      paymentStatus,
     });
 
-    // ✅ Save booking
     await newBooking.save();
 
     res.status(201).json({
       message: "Booking created successfully ✅",
-      booking: newBooking
+      booking: newBooking,
     });
-
   } catch (error) {
-    console.error("Error creating booking:", error.message);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error creating booking:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-
-
 
 // -------------------- GET ALL BOOKINGS --------------------
 const getAllWashBookings = async (req, res) => {
@@ -149,6 +156,33 @@ const getBookingsByCustomerId = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching bookings by customer ID:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+// -------------------- GET FULL BOOKING DETAILS --------------------
+const getBookingDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid booking ID" });
+    }
+
+    // ✅ Populate both Customer & Washer info
+    const booking = await Booking.findById(id)
+      .populate("customerId", "fullName email phoneNumber address")
+      .populate("washerDetails.washerId", "fullName email phoneNumber rating");
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    res.status(200).json({
+      message: "Booking details fetched successfully ✅",
+      booking,
+    });
+  } catch (error) {
+    console.error("Error fetching booking details:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -250,6 +284,7 @@ export default {
   getAllWashBookings,
   getBookingsByCustomerId,
   getBookingById,
+  getBookingDetails,
   cancelBooking,
   updateBooking,
   deleteBooking

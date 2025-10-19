@@ -1,5 +1,5 @@
 import ContactQuery from "../models/contactQueryModel.js";
-
+import mongoose from "mongoose";
 // ✅ Create a new contact query
  const createQuery = async (req, res) => {
   try {

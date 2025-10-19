@@ -1,5 +1,7 @@
 import WasherEmpSchedule from "../models/washerEmpScheduleModel.js";
 import Booking from "../models/washBookingModels.js";
+import WasherEmp from "../models/washerEmpRegistrationModel.js";
+
 import mongoose from "mongoose";
 
 // Accept a booking
@@ -11,31 +13,45 @@ const acceptBooking = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    // 1️⃣ Create schedule for washer
+    // 🧩 Find washer details
+    const washer = await WasherEmp.findById(washerId);
+    if (!washer) {
+      return res.status(404).json({ message: "Washer employee not found" });
+    }
+
+    // ✅ Create washer schedule
     const schedule = await WasherEmpSchedule.create({
       washerEmployeeId: washerId,
       bookingId,
       status: "On the Way"
     });
 
-    // 2️⃣ Update booking status to "On the Way"
+    // ✅ Update booking with washer details & status
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      { status: "On the Way" },
+      {
+        status: "On the Way",
+        isWasherAccepted: true, // ✅ mark as accepted
+        washerDetails: {
+          washerId: washer._id,
+          fullName: washer.fullName,
+          phone: washer.phone,
+          avgRating: washer.avgRating
+        }
+      },
       { new: true }
     );
 
-    res.status(200).json({ 
-      message: "Booking accepted and status updated",
+    res.status(200).json({
+      message: "Booking accepted successfully ✅",
       schedule,
-      updatedBooking 
+      updatedBooking
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error accepting booking:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
 
 // Decline a booking
  const declineBooking = async (req, res) => {

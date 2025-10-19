@@ -1,4 +1,9 @@
 import CustomerService from "../models/serviceBookingModel.js";
+import Customer from "../models/customerModels.js";
+import RepairTechnician from "../models/repairTechnicianModel.js";
+import Schedule from "../models/repairTechnicianScheduleModel.js";
+import mongoose from "mongoose";
+
 
 // -------------------- CREATE SERVICE ORDER --------------------
 const createServiceOrder = async (req, res) => {
@@ -93,6 +98,69 @@ const getServiceOrderById = async (req, res) => {
   }
 };
 
+const getServiceBookingDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid service booking ID" });
+    }
+
+    // 🔹 Fetch the booking
+    const booking = await CustomerService.findById(id)
+      .populate("customerId", "fullName email phoneNumber")
+      .lean();
+
+    if (!booking) {
+      return res.status(404).json({ message: "Service booking not found" });
+    }
+
+    // 🔹 Check if any technician accepted this booking
+    const schedule = await Schedule.findOne({ customerServiceId: id })
+      .populate("repairTechnicianId", "fullName phoneNumber email rating")
+      .lean();
+
+    // 🔹 Technician Details (if accepted)
+    let technicianDetails = null;
+    let isTechnicianAccepted = false;
+
+    if (schedule && schedule.repairTechnicianId) {
+      technicianDetails = {
+        technicianId: schedule.repairTechnicianId._id,
+        fullName: schedule.repairTechnicianId.fullName,
+        phone: schedule.repairTechnicianId.phoneNumber,
+        avgRating: schedule.repairTechnicianId.rating || 0,
+      };
+      isTechnicianAccepted = true;
+    }
+
+    // 🔹 Final formatted response
+    const result = {
+      _id: booking._id,
+      customerId: booking.customerId,
+      serviceItems: booking.serviceItems,
+      address: booking.address,
+      date: booking.date,
+      time: booking.time,
+      payment: booking.payment,
+      serviceStatus: booking.serviceStatus,
+      isTechnicianAccepted,
+      technicianDetails,
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+    };
+
+    res.status(200).json({
+      message: "Service booking details fetched successfully ✅",
+      serviceBooking: result,
+    });
+  } catch (error) {
+    console.error("Error fetching service booking details:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
 // -------------------- CANCEL SERVICE ORDER --------------------
 const cancelServiceOrder = async (req, res) => {
   try {
@@ -180,6 +248,7 @@ export default {
   getAllServiceOrders,
   getServiceOrdersByCustomer,
   getServiceOrderById,
+  getServiceBookingDetails,
   cancelServiceOrder,
   updateServiceOrder,
   deleteServiceOrder,

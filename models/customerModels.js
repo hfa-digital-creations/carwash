@@ -23,6 +23,9 @@ const customerSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    
+    // Admin control
+    isActive: { type: Boolean, default: false } // false by default, admin can activate
   },
   { timestamps: true }
 );

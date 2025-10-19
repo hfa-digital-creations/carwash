@@ -76,6 +76,98 @@
           }
         }
       },
+      "/User/forgotPassword": {
+        "post": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Send password reset link to user's email",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerForgotPassword"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Password reset link sent successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Password reset link sent to email ✅"
+                      },
+                      "resetUrl": {
+                        "type": "string",
+                        "example": "http://localhost:3000/resetPassword/abc123token"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request / Missing email"
+            },
+            "404": {
+              "description": "User not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/User/resetPassword/{token}": {
+        "put": {
+          "tags": [
+            "Customer"
+          ],
+          "summary": "Reset user password using token",
+          "parameters": [
+            {
+              "name": "token",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Password reset token"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResetPassword"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Password reset successful"
+            },
+            "400": {
+              "description": "Invalid or expired token"
+            },
+            "404": {
+              "description": "User not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
       "/User/getAllUsers": {
         "get": {
           "tags": [
@@ -573,6 +665,37 @@
           }
         }
       },
+      "/washBooking/getBookingDetails/{id}": {
+  "get": {
+    "tags": ["Wash Booking"],
+    "summary": "Fetch detailed booking info including customer and washer details",
+    "description": "Returns a complete booking record with related customer and washer details, including progress tracking.",
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "example": "652a1f3e2b9871dabc123456"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Booking details fetched successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/WashBookingDetails"
+            }
+          }
+        }
+      },
+      "404": { "description": "Booking not found" },
+      "400": { "description": "Invalid booking ID" },
+      "500": { "description": "Server error" }
+    }
+  }
+},
       "/washBooking/updateWashBooking/{id}": {
         "put": {
           "tags": [
@@ -709,7 +832,16 @@
               "content": {
                 "application/json": {
                   "schema": {
-                    "$ref": "#/components/schemas/CartResponse"
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Product added to cart"
+                      },
+                      "cart": {
+                        "$ref": "#/components/schemas/CartResponse"
+                      }
+                    }
                   }
                 }
               }
@@ -717,9 +849,35 @@
             "400": {
               "description": "Invalid input"
             },
+            "404": {
+              "description": "Product or cart not found"
+            },
             "500": {
               "description": "Server error"
             }
+          }
+        }
+      },
+      "AddProductRequest": {
+        "type": "object",
+        "required": [
+          "customerId",
+          "productId",
+          "quantity"
+        ],
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "ID of the customer"
+          },
+          "productId": {
+            "type": "string",
+            "description": "ID of the product"
+          },
+          "quantity": {
+            "type": "integer",
+            "default": 1,
+            "description": "Quantity of the product"
           }
         }
       },
@@ -900,23 +1058,33 @@
           "tags": [
             "CustomerShopping"
           ],
-          "summary": "Create a new order",
+          "summary": "Create a new order (auto-fetches customer details)",
           "requestBody": {
             "required": true,
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Order"
+                  "$ref": "#/components/schemas/OrderCreate"
                 }
               }
             }
           },
           "responses": {
             "201": {
-              "description": "Order created successfully"
+              "description": "Order created successfully (includes customer snapshot)",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
+                }
+              }
             },
             "400": {
-              "description": "Missing required fields"
+              "description": "Validation error or missing fields"
+            },
+            "404": {
+              "description": "Customer not found"
             },
             "500": {
               "description": "Server error"
@@ -929,10 +1097,20 @@
           "tags": [
             "CustomerShopping"
           ],
-          "summary": "Get all orders",
+          "summary": "Get all orders (includes customer snapshot)",
           "responses": {
             "200": {
-              "description": "Orders fetched successfully"
+              "description": "Orders fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OrderResponse"
+                    }
+                  }
+                }
+              }
             },
             "404": {
               "description": "No orders found"
@@ -948,7 +1126,7 @@
           "tags": [
             "CustomerShopping"
           ],
-          "summary": "Get order by ID",
+          "summary": "Get order by ID (includes customer snapshot)",
           "parameters": [
             {
               "name": "id",
@@ -962,7 +1140,14 @@
           ],
           "responses": {
             "200": {
-              "description": "Order fetched successfully"
+              "description": "Order fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
+                }
+              }
             },
             "404": {
               "description": "Order not found"
@@ -978,7 +1163,7 @@
           "tags": [
             "CustomerShopping"
           ],
-          "summary": "Get orders by customer ID",
+          "summary": "Get all orders for a specific customer (includes customer snapshot)",
           "parameters": [
             {
               "name": "customerId",
@@ -992,7 +1177,17 @@
           ],
           "responses": {
             "200": {
-              "description": "Customer orders fetched successfully"
+              "description": "Customer orders fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OrderResponse"
+                    }
+                  }
+                }
+              }
             },
             "404": {
               "description": "No orders found for this customer"
@@ -1003,12 +1198,12 @@
           }
         }
       },
-      "/CustomerShopping/updateOrder/{id}": {
+      "/CustomerShopping/cancelOrder/{id}": {
         "put": {
           "tags": [
             "CustomerShopping"
           ],
-          "summary": "Update an order by ID",
+          "summary": "Cancel an order by ID",
           "parameters": [
             {
               "name": "id",
@@ -1021,18 +1216,21 @@
             }
           ],
           "requestBody": {
-            "required": true,
+            "required": false,
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderUpdate"
+                  "$ref": "#/components/schemas/OrderCancel"
                 }
               }
             }
           },
           "responses": {
             "200": {
-              "description": "Order updated successfully"
+              "description": "Order cancelled successfully"
+            },
+            "400": {
+              "description": "Invalid order ID or already cancelled"
             },
             "404": {
               "description": "Order not found"
@@ -1073,50 +1271,7 @@
           }
         }
       },
-      "/CustomerShopping/cancelOrder/{id}": {
-        "put": {
-          "tags": [
-            "CustomerShopping"
-          ],
-          "summary": "Cancel an order by ID",
-          "description": "Allows a customer or admin to cancel an order and provide a cancellation reason.",
-          "parameters": [
-            {
-              "name": "id",
-              "in": "path",
-              "required": true,
-              "schema": {
-                "type": "string"
-              },
-              "example": "652a1f3e2b9871dabc123456"
-            }
-          ],
-          "requestBody": {
-            "required": false,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderCancel"
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Order cancelled successfully"
-            },
-            "400": {
-              "description": "Invalid order ID or already cancelled"
-            },
-            "404": {
-              "description": "Order not found"
-            },
-            "500": {
-              "description": "Server error"
-            }
-          }
-        }
-      },
+
       "/ServiceBooking/createServiceOrder": {
         "post": {
           "summary": "Create a new service booking order",
@@ -1225,6 +1380,63 @@
           }
         }
       },
+      "/ServiceBooking/getServiceBookingDetails/{id}": {
+  "get": {
+    "summary": "Get service booking details with technician info",
+    "tags": ["ServiceBooking"],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "example": "6710d4f1b3a9a0a6a6b8e125"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Service booking details fetched successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "serviceBooking": {
+                  "type": "object",
+                  "properties": {
+                    "_id": { "type": "string" },
+                    "customerId": { "$ref": "#/components/schemas/Customer" },
+                    "serviceItems": { "type": "array" },
+                    "address": { "type": "object" },
+                    "date": { "type": "string" },
+                    "time": { "type": "string" },
+                    "payment": { "type": "object" },
+                    "serviceStatus": { "type": "string" },
+                    "isTechnicianAccepted": { "type": "boolean" },
+                    "technicianDetails": {
+                      "type": "object",
+                      "properties": {
+                        "technicianId": { "type": "string" },
+                        "fullName": { "type": "string" },
+                        "phone": { "type": "string" },
+                        "avgRating": { "type": "number" }
+                      }
+                    },
+                    "createdAt": { "type": "string" },
+                    "updatedAt": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "404": { "description": "Service booking not found" },
+      "500": { "description": "Server error" }
+    }
+  }
+},
       "/ServiceBooking/cancelServiceOrder/{orderId}": {
         "put": {
           "summary": "Cancel a service order by ID",
@@ -1338,6 +1550,7 @@
           }
         }
       },
+
       "/address/createAddress": {
         "post": {
           "tags": [
@@ -1725,36 +1938,113 @@
           }
         }
       },
-       "/RatingS/deleteRating/{ratingId}": {
-  "delete": {
-    "tags": ["Ratings"],
-    "summary": "Soft delete a rating",
-    "description": "Hides a rating instead of permanently deleting it (only owner or admin can perform this).",
-    "parameters": [
-      {
-        "name": "ratingId",
-        "in": "path",
-        "required": true,
-        "schema": { "type": "string" },
-        "description": "Rating ID"
+      "/RatingS/deleteRating/{ratingId}": {
+        "delete": {
+          "tags": [
+            "Ratings"
+          ],
+          "summary": "Soft delete a rating",
+          "description": "Hides a rating instead of permanently deleting it (only owner or admin can perform this).",
+          "parameters": [
+            {
+              "name": "ratingId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Rating ID"
+            },
+            {
+              "name": "customerId",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Customer ID attempting to delete the rating"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Rating hidden (soft deleted) successfully"
+            },
+            "403": {
+              "description": "Not allowed"
+            },
+            "404": {
+              "description": "Rating not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
       },
-      {
-        "name": "customerId",
-        "in": "query",
-        "required": true,
-        "schema": { "type": "string" },
-        "description": "Customer ID attempting to delete the rating"
-      }
-    ],
-    "responses": {
-      "200": { "description": "Rating hidden (soft deleted) successfully" },
-      "403": { "description": "Not allowed" },
-      "404": { "description": "Rating not found" },
-      "500": { "description": "Server error" }
-    }
-  }
-}
-,
+      "/RatingS/admin/getAllRatings": {
+        "get": {
+          "tags": [
+            "Ratings"
+          ],
+          "summary": "Get all ratings (including soft-deleted)",
+          "description": "Allows admin to see all ratings regardless of isDeleted status",
+          "responses": {
+            "200": {
+              "description": "List of all ratings",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "ratings": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/RatingResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/RatingS/admin/getDeletedRatings": {
+        "get": {
+          "tags": [
+            "Ratings"
+          ],
+          "summary": "Get only soft-deleted ratings",
+          "description": "Allows admin to see ratings that customers have soft-deleted",
+          "responses": {
+            "200": {
+              "description": "List of soft-deleted ratings",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "ratings": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/RatingResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
       "/washerEmp/createWasherEmployee": {
         "post": {
           "summary": "Create a new washer employee with documents",
@@ -2482,7 +2772,1512 @@
             }
           }
         }
+      },
+
+
+       "/repairTechnician/createRepairTechnician": {
+    "post": {
+      "tags": ["RepairTechnician"],
+      "summary": "Create a new Repair Technician",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/RepairTechnician" }
+          }
+        }
+      },
+      "responses": {
+        "201": { "description": "Repair Technician created successfully" },
+        "400": { "description": "Error creating Repair Technician" }
       }
+    }
+  },
+  "/repairTechnician/getAllRepairTechnicians": {
+    "get": {
+      "tags": ["RepairTechnician"],
+      "summary": "Get all Repair Technicians",
+      "responses": {
+        "200": {
+          "description": "List of all Repair Technicians",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/RepairTechnician" }
+              }
+            }
+          }
+        },
+        "500": { "description": "Error fetching technicians" }
+      }
+    }
+  },
+  "/repairTechnician/getRepairTechnicianById/{id}": {
+    "get": {
+      "tags": ["RepairTechnician"],
+      "summary": "Get Repair Technician by ID",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" },
+          "description": "MongoDB ObjectId of the technician"
+        }
+      ],
+      "responses": {
+        "200": { "description": "Repair Technician fetched successfully" },
+        "400": { "description": "Invalid ID" },
+        "404": { "description": "Repair Technician not found" },
+        "500": { "description": "Error fetching technician" }
+      }
+    }
+  },
+  "/repairTechnician/updateRepairTechnician/{id}": {
+    "put": {
+      "tags": ["RepairTechnician"],
+      "summary": "Update Repair Technician",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" },
+          "description": "MongoDB ObjectId of the technician"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/RepairTechnician" }
+          }
+        }
+      },
+      "responses": {
+        "200": { "description": "Repair Technician updated successfully" },
+        "400": { "description": "Error updating technician" },
+        "404": { "description": "Repair Technician not found" }
+      }
+    }
+  },
+  "/repairTechnician/deleteRepairTechnician/{id}": {
+    "delete": {
+      "tags": ["RepairTechnician"],
+      "summary": "Delete Repair Technician",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" },
+          "description": "MongoDB ObjectId of the technician"
+        }
+      ],
+      "responses": {
+        "200": { "description": "Repair Technician deleted successfully" },
+        "400": { "description": "Invalid ID" },
+        "404": { "description": "Repair Technician not found" },
+        "500": { "description": "Error deleting technician" }
+      }
+    }
+  },
+
+  "/repairService/createService": {
+      "post": {
+        "tags": ["RepairService"],
+        "summary": "Create a new repair service",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateServiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service created successfully"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/repairService/getAllServices": {
+      "get": {
+        "tags": ["RepairService"],
+        "summary": "Get all repair services",
+        "responses": {
+          "200": {
+            "description": "List of all services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllServicesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/repairService/serviceById/{serviceId}": {
+      "get": {
+        "tags": ["RepairService"],
+        "summary": "Get service details by ID",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the service to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Service"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Service not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/repairService/getAlltechnician/{repairTechnicianId}": {
+      "get": {
+        "tags": ["RepairService"],
+        "summary": "Get all services created by a specific repair technician",
+        "parameters": [
+          {
+            "name": "repairTechnicianId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the repair technician"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of services by technician",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllServicesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid technician ID"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/repairService/updateService/{serviceId}": {
+      "put": {
+        "tags": ["RepairService"],
+        "summary": "Update an existing repair service",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the service to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service updated successfully"
+          },
+          "404": {
+            "description": "Service not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/repairService/deleteService/{serviceId}": {
+      "delete": {
+        "tags": ["RepairService"],
+        "summary": "Delete a repair service by ID",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the service to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service deleted successfully"
+          },
+          "404": {
+            "description": "Service not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+
+
+
+       "/repairTechnicanSchedule/acceptService": {
+    "post": {
+      "tags": ["Repair Technician Schedule"],
+      "summary": "Accept a customer service request",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AcceptServiceRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Service accepted successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptServiceResponse"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid ID or bad request"
+        },
+        "500": {
+          "description": "Server error"
+        }
+      }
+    }
+  },
+  "/repairTechnicanSchedule/declineService": {
+    "post": {
+      "tags": ["Repair Technician Schedule"],
+      "summary": "Decline a customer service request",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DeclineServiceRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Service declined successfully"
+        },
+        "500": {
+          "description": "Server error"
+        }
+      }
+    }
+  },
+  "/repairTechnicanSchedule/updateService/{scheduleId}": {
+    "put": {
+      "tags": ["Repair Technician Schedule"],
+      "summary": "Update service status (On the Way / Service Started / Completed / Cancelled)",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "scheduleId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Schedule ID to update"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UpdateServiceStatus"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Status updated successfully"
+        },
+        "404": {
+          "description": "Schedule not found"
+        },
+        "500": {
+          "description": "Server error"
+        }
+      }
+    }
+  },
+  "/repairTechnicanSchedule/getAllSchedules": {
+    "get": {
+      "tags": ["Repair Technician Schedule"],
+      "summary": "Fetch all or technician-specific schedules",
+      "parameters": [
+        {
+          "in": "query",
+          "name": "repairTechnicianId",
+          "schema": {
+            "type": "string"
+          },
+          "description": "Filter by technician ID"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Schedules fetched successfully"
+        },
+        "404": {
+          "description": "No schedules found"
+        },
+        "500": {
+          "description": "Server error"
+        }
+      }
+    }
+  },
+  "/repairTechnicanSchedule/deleteSchedule/{scheduleId}": {
+    "delete": {
+      "tags": ["Repair Technician Schedule"],
+      "summary": "Delete a technician schedule",
+      "parameters": [
+        {
+          "in": "path",
+          "name": "scheduleId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Schedule ID to delete"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Schedule deleted successfully"
+        },
+        "404": {
+          "description": "Schedule not found"
+        },
+        "500": {
+          "description": "Server error"
+        }
+      }
+    }
+  },
+
+
+      "/productSeller/createProductSeller": {
+        "post": {
+          "tags": [
+            "ProductSeller"
+          ],
+          "summary": "Create a new Product Seller",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSellerInput"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Product Seller created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductSellerResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Error creating Product Seller"
+            }
+          }
+        }
+      },
+      "/productSeller/getAllProductSellers": {
+        "get": {
+          "tags": [
+            "ProductSeller"
+          ],
+          "summary": "Get all Product Sellers",
+          "responses": {
+            "200": {
+              "description": "All Product Sellers fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/ProductSeller"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/productSeller/getProductSellerById/{id}": {
+        "get": {
+          "tags": [
+            "ProductSeller"
+          ],
+          "summary": "Get Product Seller by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Product Seller fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductSellerResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Product Seller not found"
+            }
+          }
+        }
+      },
+      "/productSeller/updateProductSeller/{id}": {
+        "put": {
+          "tags": [
+            "ProductSeller"
+          ],
+          "summary": "Update Product Seller",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSellerInput"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Product Seller updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductSellerResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Product Seller not found"
+            }
+          }
+        }
+      },
+      "/productSeller/deleteProductSeller/{id}": {
+        "delete": {
+          "tags": [
+            "ProductSeller"
+          ],
+          "summary": "Delete Product Seller",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Product Seller deleted successfully"
+            },
+            "404": {
+              "description": "Product Seller not found"
+            }
+          }
+        }
+      },
+
+      "/product/createProduct": {
+        "post": {
+          "tags": [
+            "Product"
+          ],
+          "summary": "Create a new product",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sellerId": {
+                      "type": "string",
+                      "example": "64f123abc456def78901234"
+                    },
+                    "productTitle": {
+                      "type": "string",
+                      "example": "Car Shampoo"
+                    },
+                    "productDescription": {
+                      "type": "string",
+                      "example": "High-quality car shampoo"
+                    },
+                    "unitPrice": {
+                      "type": "number",
+                      "example": 299
+                    },
+                    "stockQuantity": {
+                      "type": "number",
+                      "example": 50
+                    },
+                    "productImage": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "required": [
+                    "sellerId",
+                    "productTitle",
+                    "productDescription",
+                    "unitPrice",
+                    "stockQuantity",
+                    "productImage"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Product created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "All fields are required"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/product/getAllProducts": {
+        "get": {
+          "tags": [
+            "Product"
+          ],
+          "summary": "Get all products",
+          "responses": {
+            "200": {
+              "description": "All products fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductsListResponse"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/product/getProductById/{productId}": {
+        "get": {
+          "tags": [
+            "Product"
+          ],
+          "summary": "Get product by ID",
+          "parameters": [
+            {
+              "name": "productId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Product fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Product not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/product/getAllProductsBySellerId/{sellerId}": {
+        "get": {
+          "tags": [
+            "Product"
+          ],
+          "summary": "Get all products by seller ID",
+          "parameters": [
+            {
+              "name": "sellerId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Products for the seller fetched successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductsListResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid Seller ID"
+            },
+            "404": {
+              "description": "Seller not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/product/updateProduct/{productId}": {
+        "put": {
+          "tags": [
+            "Product"
+          ],
+          "summary": "Update product by ID",
+          "parameters": [
+            {
+              "name": "productId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "productTitle": {
+                      "type": "string"
+                    },
+                    "productDescription": {
+                      "type": "string"
+                    },
+                    "unitPrice": {
+                      "type": "number"
+                    },
+                    "stockQuantity": {
+                      "type": "number"
+                    },
+                    "productImage": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Product updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ProductResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Product not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/product/deleteProduct/{productId}": {
+        "delete": {
+          "tags": [
+            "Product"
+          ],
+          "summary": "Delete product by ID",
+          "parameters": [
+            {
+              "name": "productId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Product deleted successfully"
+            },
+            "404": {
+              "description": "Product not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+
+      "/seller-orders/accept": {
+        "post": {
+          "tags": [
+            "SellerOrderTrack"
+          ],
+          "summary": "Accept a customer order",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptOrderRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Seller order accepted",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SellerOrderTrackResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid input"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/seller-orders/status/{trackId}": {
+        "put": {
+          "tags": [
+            "SellerOrderTrack"
+          ],
+          "summary": "Update seller order status",
+          "parameters": [
+            {
+              "name": "trackId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "ID of the seller order track"
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOrderStatusRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Order status updated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SellerOrderTrackResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid ID"
+            },
+            "404": {
+              "description": "Track not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/seller-orders": {
+        "get": {
+          "tags": [
+            "SellerOrderTrack"
+          ],
+          "summary": "Get all seller orders or filter by sellerId",
+          "parameters": [
+            {
+              "name": "sellerId",
+              "in": "query",
+              "schema": {
+                "type": "string"
+              },
+              "description": "Filter orders by seller ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of seller orders",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "orders": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/SellerOrderTrackResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No orders found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/seller-orders/{trackId}": {
+        "delete": {
+          "tags": [
+            "SellerOrderTrack"
+          ],
+          "summary": "Delete a seller order track",
+          "parameters": [
+            {
+              "name": "trackId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Track deleted successfully"
+            },
+            "400": {
+              "description": "Invalid track ID"
+            },
+            "404": {
+              "description": "Track not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+
+      "/contactQuery/createQuery": {
+        "post": {
+          "tags": [
+            "ContactQuery"
+          ],
+          "summary": "Create a new contact query",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactQueryCreate"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Query submitted successfully"
+            },
+            "400": {
+              "description": "Validation error"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/contactQuery/getAllQueries": {
+        "get": {
+          "tags": [
+            "ContactQuery"
+          ],
+          "summary": "Get all contact queries",
+          "responses": {
+            "200": {
+              "description": "All queries fetched successfully"
+            },
+            "404": {
+              "description": "No queries found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/contactQuery/getQueryById/{id}": {
+        "get": {
+          "tags": [
+            "ContactQuery"
+          ],
+          "summary": "Get a contact query by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Query fetched successfully"
+            },
+            "404": {
+              "description": "Query not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/adminRegistration/register": {
+        "post": {
+          "tags": [
+            "Admin"
+          ],
+          "summary": "Register a new admin",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminRegister"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Admin registered successfully"
+            },
+            "400": {
+              "description": "Validation error or admin already exists"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/adminRegistration/login": {
+        "post": {
+          "tags": [
+            "Admin"
+          ],
+          "summary": "Admin login",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLogin"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Admin logged in successfully"
+            },
+            "400": {
+              "description": "Invalid credentials"
+            },
+            "404": {
+              "description": "Admin not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/adminRegistration/getAllAdmins": {
+        "get": {
+          "tags": [
+            "Admin"
+          ],
+          "summary": "Get all admins",
+          "responses": {
+            "200": {
+              "description": "Admins fetched successfully"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/adminRegistration/getAdminById/{id}": {
+        "get": {
+          "tags": [
+            "Admin"
+          ],
+          "summary": "Get admin by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "example": "652a1f3e2b9871dabc123456"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Admin fetched successfully"
+            },
+            "404": {
+              "description": "Admin not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/adminRegistration/updateAdmin/{id}": {
+  "put": {
+    "tags": ["Admin"],
+    "summary": "Update admin by ID",
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "example": "652a1f3e2b9871dabc123456"
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": { "$ref": "#/components/schemas/AdminUpdate" }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Admin updated successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "Admin updated successfully ✅" },
+                "admin": { "$ref": "#/components/schemas/AdminDetails" }
+              }
+            }
+          }
+        }
+      },
+      "404": { "description": "Admin not found" },
+      "500": { "description": "Server error" }
+    }
+  }
+      },
+      "/adminRegistration/deleteAdmin/{id}": {
+        "delete": {
+          "tags": [
+            "Admin"
+          ],
+          "summary": "Delete admin by ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Admin deleted successfully"
+            },
+            "404": {
+              "description": "Admin not found"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+
+       "/admin/assignOrder/createAssignOrder": {
+      "post": {
+        "tags": ["AssignOrder"],
+        "summary": "Create / Assign Order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignOrderRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order assigned successfully",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AssignOrderResponse" } }
+            }
+          },
+          "400": { "description": "Invalid input or missing fields" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/admin/assignOrder/updateAssignOrder/{id}": {
+      "put": {
+        "tags": ["AssignOrder"],
+        "summary": "Update Assigned Order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "AssignOrder ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignOrderUpdateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Order updated successfully" },
+          "400": { "description": "Invalid ID" },
+          "404": { "description": "Order not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/admin/assignOrder/deleteAssignOrder/{id}": {
+      "delete": {
+        "tags": ["AssignOrder"],
+        "summary": "Delete Assigned Order",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Order deleted successfully" },
+          "400": { "description": "Invalid ID" },
+          "404": { "description": "Order not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/admin/assignOrder/getAllAssignOrders/getAll": {
+      "get": {
+        "tags": ["AssignOrder"],
+        "summary": "Get all Assigned Orders",
+        "responses": {
+          "200": {
+            "description": "All assigned orders",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignOrderListResponse" } } }
+          },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/admin/assignOrder/getAssignOrderById/{id}": {
+      "get": {
+        "tags": ["AssignOrder"],
+        "summary": "Get Assigned Order by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Order found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssignOrderResponse" } } } },
+          "400": { "description": "Invalid ID" },
+          "404": { "description": "Order not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/admin/assignOrder/declineAssignOrder/{id}": {
+      "put": {
+        "tags": ["AssignOrder"],
+        "summary": "Decline / Cancel Assigned Order",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Order cancelled successfully" },
+          "400": { "description": "Invalid ID" },
+          "404": { "description": "Order not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+"/adminbranch/createBranch": {
+      "post": {
+        "tags": ["Branch"],
+        "summary": "Create a new branch with sub-admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateBranchRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Branch created successfully",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchResponse" } } }
+          },
+          "400": { "description": "Bad request (missing fullName/phoneNumber/email/password)" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/adminbranch/updateBranch/{id}": {
+      "put": {
+        "tags": ["Branch"],
+        "summary": "Update branch or sub-admin details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateBranchRequest" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Branch updated successfully", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchResponse" } } } },
+          "400": { "description": "Invalid Branch ID or missing subAdmin fields" },
+          "404": { "description": "Branch not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/adminbranch/deleteBranch/{id}": {
+      "delete": {
+        "tags": ["Branch"],
+        "summary": "Delete a branch",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Branch deleted successfully" },
+          "400": { "description": "Invalid Branch ID" },
+          "404": { "description": "Branch not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/adminbranch/getAllBranches": {
+      "get": {
+        "tags": ["Branch"],
+        "summary": "Get all branches",
+        "responses": {
+          "200": { "description": "List of all branches", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchesListResponse" } } } },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/adminbranch/getBranchById/{id}": {
+      "get": {
+        "tags": ["Branch"],
+        "summary": "Get branch by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Branch details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchResponse" } } } },
+          "400": { "description": "Invalid Branch ID" },
+          "404": { "description": "Branch not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/adminbranch/toggleBranchStatus/{id}": {
+      "put": {
+        "tags": ["Branch"],
+        "summary": "Activate or deactivate branch/sub-admin",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "isActive": { "type": "boolean", "example": true } }, "required": ["isActive"] }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Branch status updated successfully" },
+          "400": { "description": "Invalid Branch ID" },
+          "404": { "description": "Branch not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    }
     },
     "components": {
       "schemas": {
@@ -2533,6 +4328,35 @@
           "required": [
             "emailOrPhone",
             "password"
+          ]
+        },
+        "CustomerForgotPassword": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "example": "john@example.com"
+            }
+          },
+          "required": [
+            "email"
+          ]
+        },
+        "CustomerResetPassword": {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string",
+              "example": "newpassword123"
+            },
+            "confirmPassword": {
+              "type": "string",
+              "example": "newpassword123"
+            }
+          },
+          "required": [
+            "password",
+            "confirmPassword"
           ]
         },
         "CustomerUpdate": {
@@ -2794,6 +4618,69 @@
             "totalAmount"
           ]
         },
+        "WashBookingDetails": {
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string", "example": "68e9eb5372ffcf9a50ca0d03" },
+        "fullName": { "type": "string", "example": "Naveen Kumar" },
+        "email": { "type": "string", "example": "naveen@example.com" },
+        "phoneNumber": { "type": "string", "example": "9876543210" }
+      }
+    },
+    "washerDetails": {
+      "type": "object",
+      "properties": {
+        "washerId": { "type": "string", "example": "609ebc972abf9d0020e8b123" },
+        "fullName": { "type": "string", "example": "Arun Washer" },
+        "avgRating": { "type": "number", "example": 4.5 }
+      }
+    },
+    "vehicleType": { "type": "string", "example": "Car" },
+    "vehicleNumber": { "type": "string", "example": "TN01AB1234" },
+    "washPackage": {
+      "type": "object",
+      "properties": {
+        "packageName": { "type": "string", "example": "Premium Wash" },
+        "price": { "type": "number", "example": 60 },
+        "description": { "type": "string", "example": "Exterior + Interior + Polish" },
+        "features": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["Exterior Wash", "Vacuum Clean", "Wax Polish"]
+        }
+      }
+    },
+    "serviceType": { "type": "string", "example": "Express" },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string", "example": "12 Gandhi Street" },
+        "city": { "type": "string", "example": "Chennai" },
+        "pincode": { "type": "string", "example": "600001" }
+      }
+    },
+    "progress": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stage": { "type": "string", "example": "Washing In Progress" },
+          "time": { "type": "string", "example": "10:30 AM" },
+          "status": { "type": "boolean", "example": true }
+        }
+      }
+    },
+    "status": { "type": "string", "example": "Completed" },
+    "totalAmount": { "type": "number", "example": 80 },
+    "paymentMethod": { "type": "string", "example": "UPI" },
+    "paymentStatus": { "type": "string", "example": "Paid" },
+    "createdAt": { "type": "string", "example": "2025-06-10T09:00:00Z" },
+    "updatedAt": { "type": "string", "example": "2025-06-10T10:00:00Z" }
+  }
+},
         "WashBookingUpdate": {
           "type": "object",
           "properties": {
@@ -2846,8 +4733,6 @@
           "required": [
             "customerId",
             "productId",
-            "productName",
-            "price",
             "quantity"
           ],
           "properties": {
@@ -2857,18 +4742,9 @@
             "productId": {
               "type": "string"
             },
-            "productName": {
-              "type": "string"
-            },
-            "productDescription": {
-              "type": "string"
-            },
             "quantity": {
               "type": "integer",
               "default": 1
-            },
-            "price": {
-              "type": "number"
             }
           }
         },
@@ -2947,20 +4823,34 @@
         "CartItem": {
           "type": "object",
           "properties": {
-            "productId": {
-              "type": "string"
-            },
-            "productName": {
-              "type": "string"
-            },
-            "productDescription": {
-              "type": "string"
+            "product": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "productTitle": {
+                  "type": "string"
+                },
+                "productDescription": {
+                  "type": "string"
+                },
+                "unitPrice": {
+                  "type": "number"
+                },
+                "stockQuantity": {
+                  "type": "number"
+                },
+                "productImage": {
+                  "type": "string"
+                },
+                "sellerId": {
+                  "type": "string"
+                }
+              }
             },
             "quantity": {
               "type": "integer"
-            },
-            "price": {
-              "type": "number"
             },
             "total": {
               "type": "number"
@@ -3054,12 +4944,13 @@
             }
           }
         },
-        "Order": {
+        "OrderCreate": {
           "type": "object",
           "properties": {
             "customerId": {
               "type": "string",
-              "example": "68e9eb5372ffcf9a50ca0d03"
+              "example": "68e9eb5372ffcf9a50ca0d03",
+              "description": "Only the customer ID is required. Other details will be auto-fetched from database."
             },
             "cartItems": {
               "type": "array",
@@ -3081,6 +4972,24 @@
             "payment"
           ]
         },
+        "CustomerDetails": {
+          "type": "object",
+          "description": "Snapshot of customer details stored at the time of order creation",
+          "properties": {
+            "name": {
+              "type": "string",
+              "example": "Naveen Kumar"
+            },
+            "email": {
+              "type": "string",
+              "example": "naveen@gmail.com"
+            },
+            "phone": {
+              "type": "string",
+              "example": "9876543210"
+            }
+          }
+        },
         "CartItem": {
           "type": "object",
           "properties": {
@@ -3088,27 +4997,42 @@
               "type": "string",
               "example": "652a1f3e2b9871dabc123456"
             },
-            "productName": {
+            "productTitle": {
               "type": "string",
-              "example": "Car Wax"
+              "example": "Bike Shampoo"
             },
             "productDescription": {
               "type": "string",
-              "example": "High-quality car wax that provides long-lasting shine and protection"
+              "example": "High-quality car shampoo"
+            },
+            "unitPrice": {
+              "type": "number",
+              "example": 299
+            },
+            "stockQuantity": {
+              "type": "integer",
+              "example": 50
+            },
+            "productImage": {
+              "type": "string",
+              "example": "uploads\\productImages\\1760616690208-954649250.png"
             },
             "quantity": {
               "type": "integer",
               "example": 2
             },
-            "price": {
-              "type": "number",
-              "example": 500
-            },
             "total": {
               "type": "number",
-              "example": 1000
+              "example": 598
             }
-          }
+          },
+          "required": [
+            "productId",
+            "productTitle",
+            "unitPrice",
+            "quantity",
+            "total"
+          ]
         },
         "Address": {
           "type": "object",
@@ -3183,9 +5107,16 @@
             }
           }
         },
-        "OrderUpdate": {
+        "OrderResponse": {
           "type": "object",
           "properties": {
+            "customerId": {
+              "type": "string",
+              "example": "68e9eb5372ffcf9a50ca0d03"
+            },
+            "customerDetails": {
+              "$ref": "#/components/schemas/CustomerDetails"
+            },
             "cartItems": {
               "type": "array",
               "items": {
@@ -3198,15 +5129,27 @@
             "payment": {
               "$ref": "#/components/schemas/Payment"
             },
+            "subtotal": {
+              "type": "number",
+              "example": 598
+            },
             "orderStatus": {
               "type": "string",
               "enum": [
-                "Processing",
-                "Shipped",
+                "Pending",
+                "Confirmed",
                 "Delivered",
                 "Cancelled"
               ],
-              "example": "Processing"
+              "example": "Pending"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         },
@@ -3234,6 +5177,7 @@
             "reason"
           ]
         },
+
         "ServiceBooking": {
           "type": "object",
           "properties": {
@@ -3396,6 +5340,7 @@
             }
           }
         },
+
         "AddressCreate": {
           "type": "object",
           "properties": {
@@ -3952,7 +5897,997 @@
               }
             }
           }
+        },
+
+
+           "RepairTechnician": {
+  "type": "object",
+  "properties": {
+    "fullName": { "type": "string", "example": "John Doe" },
+    "phoneNumber": { "type": "string", "example": "9876543210" },
+    "email": { "type": "string", "example": "johndoe@gmail.com" },
+    "password": { "type": "string", "example": "securePass123" },
+    "dateOfBirth": { "type": "string", "format": "date", "example": "1990-01-01" },
+    "gender": { "type": "string", "enum": ["Male", "Female", "Other"], "example": "Male" },
+    "role": { "type": "string", "example": "Repair Service Technician" },
+    "yearsOfExperience": { "type": "integer", "example": 5 },
+    "profilePhoto": { "type": "string", "example": "uploads/profile.jpg" },
+    "specializations": { "type": "array", "items": { "type": "string" }, "example": ["AC Repair","Refrigerator Maintenance"] },
+    "shopDetails": { "$ref": "#/components/schemas/ShopDetails" },
+    "services": { "type": "array", "items": { "$ref": "#/components/schemas/Service" } },
+    "payoutDetails": { "$ref": "#/components/schemas/PayoutDetails" },
+    "isActive": { "type": "boolean", "example": true }
+  },
+  "required": ["fullName","phoneNumber","email","password","role"]
+},
+
+"Services": {
+  "type": "object",
+  "properties": {
+    "itemName": { "type": "string", "example": "AC Repair" },
+    "subTitle": { "type": "string", "example": "Air Conditioner Service" },
+    "description": { "type": "string", "example": "Full AC maintenance service" },
+    "minPrice": { "type": "number", "example": 500 },
+    "maxPrice": { "type": "number", "example": 1500 },
+    "itemImage": { "type": "string", "example": "uploads/service/ac.jpg" }
+  }
+},
+
+"ShopDetails": {
+  "type": "object",
+  "properties": {
+    "shopName": { "type": "string", "example": "Tech Repair Shop" },
+    "shopAddress": { "type": "string", "example": "123 Main St, City" },
+    "shopCity": { "type": "string", "example": "Chennai" },
+    "shopState": { "type": "string", "example": "Tamil Nadu" },
+    "shopPincode": { "type": "string", "example": "600001" }
+  }
+},
+
+"PayoutDetails": {
+  "type": "object",
+  "properties": {
+    "accountName": { "type": "string", "example": "John Doe" },
+    "bankName": { "type": "string", "example": "State Bank of India" },
+    "accountNumber": { "type": "string", "example": "1234567890" },
+    "ifscCode": { "type": "string", "example": "SBIN0001234" },
+    "idProof": { "type": "array", "items": { "type": "string" }, "example": ["uploads/aadhar.pdf"] },
+    "termsAccepted": { "type": "boolean", "example": true }
+  },
+  "required": ["accountName","bankName","accountNumber","ifscCode"]
+},
+
+
+      "CreateServiceRequest": {
+        "type": "object",
+        "required": ["itemName", "description", "minPrice", "maxPrice", "repairTechnicianId", "itemImage"],
+        "properties": {
+          "itemName": { "type": "string", "example": "Air Conditioner Repair" },
+          "subTitle": { "type": "string", "example": "Quick and reliable AC repair" },
+          "description": { "type": "string", "example": "We fix all types of AC issues including cooling and compressor faults." },
+          "minPrice": { "type": "number", "example": 499 },
+          "maxPrice": { "type": "number", "example": 1299 },
+          "repairTechnicianId": { "type": "string", "example": "6712d9b4a60f8e91a4e6b1f5" },
+          "itemImage": { "type": "string", "format": "binary" }
         }
+      },
+      "UpdateServiceRequest": {
+        "type": "object",
+        "properties": {
+          "itemName": { "type": "string", "example": "AC Repair and Cleaning" },
+          "subTitle": { "type": "string", "example": "Updated service details" },
+          "description": { "type": "string", "example": "Comprehensive AC maintenance and cleaning services" },
+          "minPrice": { "type": "number", "example": 599 },
+          "maxPrice": { "type": "number", "example": 1499 },
+          "itemImage": { "type": "string", "format": "binary" }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "6712da13c4b92e91c9a2f812" },
+          "itemName": { "type": "string", "example": "AC Repair" },
+          "subTitle": { "type": "string", "example": "Expert repair at affordable prices" },
+          "description": { "type": "string", "example": "Fixing AC cooling, gas refilling, and general maintenance." },
+          "itemImage": { "type": "string", "example": "uploads/services/ac_repair.png" },
+          "minPrice": { "type": "number", "example": 499 },
+          "maxPrice": { "type": "number", "example": 1299 },
+          "repairTechnicianId": {
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string", "example": "6712d9b4a60f8e91a4e6b1f5" },
+              "fullName": { "type": "string", "example": "John Doe" },
+              "email": { "type": "string", "example": "john@example.com" },
+              "role": { "type": "string", "example": "Repair Service Technician" }
+            }
+          },
+          "createdAt": { "type": "string", "format": "date-time", "example": "2025-10-18T10:45:00Z" }
+        }
+      },
+      "GetAllServicesResponse": {
+        "type": "object",
+        "properties": {
+          "count": { "type": "integer", "example": 5 },
+          "services": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Service" }
+          }
+        }
+      },
+       
+
+      
+ "AcceptServiceRequest": {
+        "type": "object",
+        "required": ["customerServiceId", "repairTechnicianId"],
+        "properties": {
+          "customerServiceId": {
+            "type": "string",
+            "example": "652b1f3e2b9871dabc123456"
+          },
+          "repairTechnicianId": {
+            "type": "string",
+            "example": "652b1f3e2b9871dabc654321"
+          }
+        }
+      },
+      "AcceptServiceResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Service accepted and status updated"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/RepairTechnicianSchedule"
+          },
+          "updatedService": {
+            "type": "object",
+            "example": {
+              "_id": "652b1f3e2b9871dabc123456",
+              "serviceStatus": "On the Way",
+              "date": "2025-10-16T10:30:00.000Z"
+            }
+          }
+        }
+      },
+      "DeclineServiceRequest": {
+        "type": "object",
+        "required": ["customerServiceId", "repairTechnicianId"],
+        "properties": {
+          "customerServiceId": {
+            "type": "string",
+            "example": "652b1f3e2b9871dabc123456"
+          },
+          "repairTechnicianId": {
+            "type": "string",
+            "example": "652b1f3e2b9871dabc654321"
+          }
+        }
+      },
+      "UpdateServiceStatus": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["On the Way", "Service Started", "Completed", "Cancelled"],
+            "example": "Completed"
+          }
+        }
+      },
+      "RepairTechnicianSchedule": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "652a2b3e1a4567cdef123456"
+          },
+          "repairTechnicianId": {
+            "type": "string",
+            "example": "652b1f3e2b9871dabc654321"
+          },
+          "customerServiceId": {
+            "type": "string",
+            "example": "652b1f3e2b9871dabc123456"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["On the Way", "Service Started", "Completed", "Cancelled"],
+            "example": "On the Way"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2025-10-16T10:15:30.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "example": "2025-10-16T10:30:00.000Z"
+          }
+        }
+      },
+
+        "ProductSellerInput": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "example": "John Doe"
+            },
+            "phoneNumber": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "email": {
+              "type": "string",
+              "example": "johndoe@example.com"
+            },
+            "password": {
+              "type": "string",
+              "example": "password123"
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "format": "date",
+              "example": "1990-01-01"
+            },
+            "gender": {
+              "type": "string",
+              "enum": [
+                "Male",
+                "Female",
+                "Other"
+              ],
+              "example": "Male"
+            },
+            "role": {
+              "type": "string",
+              "example": "Product Seller"
+            },
+            "shopDetails": {
+              "type": "object",
+              "properties": {
+                "shopName": {
+                  "type": "string",
+                  "example": "John's Store"
+                },
+                "shopType": {
+                  "type": "string",
+                  "example": "Electronics"
+                },
+                "shopAddress": {
+                  "type": "string",
+                  "example": "123 Main Street"
+                },
+                "shopImages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "example": "uploads/shop1.jpg"
+                  }
+                }
+              }
+            },
+            "products": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "productTitle": {
+                    "type": "string",
+                    "example": "Smartphone"
+                  },
+                  "productDescription": {
+                    "type": "string",
+                    "example": "Latest model"
+                  },
+                  "unitPrice": {
+                    "type": "number",
+                    "example": 15000
+                  },
+                  "stockQuantity": {
+                    "type": "number",
+                    "example": 10
+                  },
+                  "productImage": {
+                    "type": "string",
+                    "example": "uploads/product1.jpg"
+                  }
+                }
+              }
+            },
+            "payoutDetails": {
+              "type": "object",
+              "properties": {
+                "accountName": {
+                  "type": "string",
+                  "example": "John Doe"
+                },
+                "accountNumber": {
+                  "type": "string",
+                  "example": "1234567890"
+                },
+                "ifscCode": {
+                  "type": "string",
+                  "example": "ABCD0123456"
+                },
+                "idProof": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "example": "uploads/aadhaar.pdf"
+                  }
+                },
+                "termsAccepted": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          },
+          "required": [
+            "fullName",
+            "phoneNumber",
+            "email",
+            "password"
+          ]
+        },
+        "Product": {
+          "type": "object",
+          "properties": {
+            "_id": {
+              "type": "string"
+            },
+            "productTitle": {
+              "type": "string"
+            },
+            "productDescription": {
+              "type": "string"
+            },
+            "unitPrice": {
+              "type": "number"
+            },
+            "stockQuantity": {
+              "type": "number"
+            },
+            "productImage": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "string"
+            }
+          }
+        },
+        "ProductSeller": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProductSellerInput"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "products": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "ProductSellerResponse": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "data": {
+              "$ref": "#/components/schemas/ProductSeller"
+            }
+          }
+        },
+        "Product": {
+          "type": "object",
+          "properties": {
+            "_id": {
+              "type": "string"
+            },
+            "sellerId": {
+              "type": "string",
+              "example": "64f123abc456def78901234"
+            },
+            "productTitle": {
+              "type": "string",
+              "example": "Car Shampoo"
+            },
+            "productDescription": {
+              "type": "string",
+              "example": "High-quality car shampoo"
+            },
+            "unitPrice": {
+              "type": "number",
+              "example": 299
+            },
+            "stockQuantity": {
+              "type": "number",
+              "example": 50
+            },
+            "productImage": {
+              "type": "string",
+              "example": "uploads/products/product1.jpg"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "ProductResponse": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "product": {
+              "$ref": "#/components/schemas/Product"
+            }
+          }
+        },
+        "ProductsListResponse": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "count": {
+              "type": "number"
+            },
+            "products": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Product"
+              }
+            }
+          }
+        },
+        
+        "AcceptOrderRequest": {
+          "type": "object",
+          "required": [
+            "sellerId",
+            "customerShoppingId",
+            "deliveryPersonId"
+          ],
+          "properties": {
+            "sellerId": {
+              "type": "string",
+              "example": "64f1a1b2..."
+            },
+            "customerShoppingId": {
+              "type": "string",
+              "example": "64f1b2c3..."
+            },
+            "deliveryPersonId": {
+              "type": "string",
+              "example": "64f1d1b3..."
+            },
+            "customerName": {
+              "type": "string",
+              "example": "Sophia Bennett"
+            },
+            "customerPhone": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "estimatedDelivery": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-10-17T14:30:00Z"
+            }
+          }
+        },
+        "UpdateOrderStatusRequest": {
+          "type": "object",
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "Pending",
+                "Accepted",
+                "Packed",
+                "Dispatched",
+                "Delivering",
+                "Delivered",
+                "Cancelled"
+              ],
+              "example": "Delivering"
+            },
+            "remarks": {
+              "type": "string",
+              "example": "Packed and ready for dispatch"
+            },
+            "deliveryPersonId": {
+              "type": "string",
+              "example": "64f1d1b3..."
+            },
+            "estimatedDelivery": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-10-17T14:30:00Z"
+            }
+          }
+        },
+        "ProductSnapshot": {
+          "type": "object",
+          "properties": {
+            "productId": {
+              "type": "string"
+            },
+            "productImage": {
+              "type": "string"
+            },
+            "productTitle": {
+              "type": "string"
+            },
+            "productDescription": {
+              "type": "string"
+            },
+            "unitPrice": {
+              "type": "number"
+            },
+            "stockQuantity": {
+              "type": "number"
+            },
+            "quantityOrdered": {
+              "type": "number"
+            },
+            "total": {
+              "type": "number"
+            }
+          }
+        },
+        "SellerOrderTrackResponse": {
+          "type": "object",
+          "properties": {
+            "_id": {
+              "type": "string"
+            },
+            "sellerId": {
+              "type": "string"
+            },
+            "customerShoppingId": {
+              "type": "string"
+            },
+            "customer": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                }
+              }
+            },
+            "products": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ProductSnapshot"
+              }
+            },
+            "deliveryPartner": {
+              "type": "object",
+              "properties": {
+                "deliveryPersonId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "vehicle": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "estimatedDelivery": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "status": {
+              "type": "string",
+              "example": "Delivering"
+            },
+            "remarks": {
+              "type": "string"
+            },
+            "updatedBy": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+
+        "ContactQueryCreate": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "example": "John Doe"
+            },
+            "email": {
+              "type": "string",
+              "example": "john@example.com"
+            },
+            "phoneNumber": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "category": {
+              "type": "string",
+              "example": "General Inquiry"
+            },
+            "message": {
+              "type": "string",
+              "example": "I need help with my booking."
+            }
+          },
+          "required": [
+            "fullName",
+            "email",
+            "phoneNumber",
+            "category",
+            "message"
+          ]
+        },
+        "ContactQueryResponse": {
+          "type": "object",
+          "properties": {
+            "_id": {
+              "type": "string",
+              "example": "652a1f3e2b9871dabc123456"
+            },
+            "fullName": {
+              "type": "string",
+              "example": "John Doe"
+            },
+            "email": {
+              "type": "string",
+              "example": "john@example.com"
+            },
+            "phoneNumber": {
+              "type": "string",
+              "example": "9876543210"
+            },
+            "category": {
+              "type": "string",
+              "example": "General Inquiry"
+            },
+            "message": {
+              "type": "string",
+              "example": "I need help with my booking."
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-10-17T10:30:00.000Z"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-10-17T10:30:00.000Z"
+            }
+          }
+        },
+
+        "AdminRegister": {
+          "type": "object",
+          "properties": {
+            "adminId": {
+              "type": "string",
+              "example": "admin001",
+              "description": "Unique admin identifier"
+            },
+            "fullName": {
+              "type": "string",
+              "example": "Naveen Kumar"
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "example": "naveen@example.com"
+            },
+            "password": {
+              "type": "string",
+              "format": "password",
+              "example": "Admin@123"
+            }
+          },
+          "required": [
+            "adminId",
+            "fullName",
+            "email",
+            "password"
+          ]
+        },
+        "AdminLogin": {
+          "type": "object",
+          "properties": {
+            "adminId": {
+              "type": "string",
+              "example": "admin001"
+            },
+            "password": {
+              "type": "string",
+              "format": "password",
+              "example": "Admin@123"
+            }
+          },
+          "required": [
+            "adminId",
+            "password"
+          ]
+        },
+        "AdminDetails": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "652a1f3e2b9871dabc123456"
+            },
+            "adminId": {
+              "type": "string",
+              "example": "admin123"
+            },
+            "fullName": {
+              "type": "string",
+              "example": "Naveen Kumar"
+            },
+            "email": {
+              "type": "string",
+              "example": "naveen@gmail.com"
+            },
+            "role": {
+              "type": "string",
+              "example": "Admin"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-10-18T05:28:26.917Z"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-10-18T05:28:26.917Z"
+            }
+          }
+        },
+       "AdminUpdate": {
+  "type": "object",
+  "properties": {
+    "adminId": {
+      "type": "string",
+      "example": "admin002",
+      "description": "Unique admin identifier (editable)"
+    },
+    "fullName": {
+      "type": "string",
+      "example": "Naveen Kumar"
+    },
+    "email": {
+      "type": "string",
+      "example": "naveen@gmail.com"
+    },
+    "password": {
+      "type": "string",
+      "example": "newpassword123"
+    }
+  }
+},
+        "AdminResponse": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "652a1f3e2b9871dabc123456"
+            },
+            "adminId": {
+              "type": "string",
+              "example": "admin001"
+            },
+            "fullName": {
+              "type": "string",
+              "example": "Naveen Kumar"
+            },
+            "email": {
+              "type": "string",
+              "example": "naveen@example.com"
+            },
+            "role": {
+              "type": "string",
+              "example": "admin"
+            }
+          }
+        },
+        "AdminLoginResponse": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string",
+              "example": "Admin logged in successfully"
+            },
+            "admin": {
+              "$ref": "#/components/schemas/AdminResponse"
+            },
+            "token": {
+              "type": "string",
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+          }
+        },
+
+
+        "AssignOrderRequest": {
+        "type": "object",
+        "required": ["customerName","serviceType","orderDate","assignedEmployee","employeeModel"],
+        "properties": {
+          "customerName": { "type": "string", "example": "Liam Carter" },
+          "serviceType": { "type": "string", "example": "Delivery" },
+          "orderDate": { "type": "string", "format": "date", "example": "2025-10-20" },
+          "assignedEmployee": { "type": "string", "example": "68f4877162af0bd0d2aa9e4d" },
+          "employeeModel": { "type": "string", "example": "DeliveryPartner" },
+          "description": { "type": "string", "example": "Customer requested express delivery" }
+        }
+      },
+      "AssignOrderUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "customerName": { "type": "string" },
+          "serviceType": { "type": "string" },
+          "orderDate": { "type": "string", "format": "date" },
+          "assignedEmployee": { "type": "string" },
+          "employeeModel": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["Assigned","Cancelled","Completed"] }
+        }
+      },
+      "AssignOrderResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Order assigned successfully" },
+          "data": { "$ref": "#/components/schemas/AssignOrderObject" }
+        }
+      },
+      "AssignOrderListResponse": {
+        "type": "object",
+        "properties": {
+          "count": { "type": "integer", "example": 5 },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/AssignOrderObject" } }
+        }
+      },
+      "AssignOrderObject": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "68f48912a857da33609f7b0a" },
+          "customerName": { "type": "string", "example": "Liam Carter" },
+          "serviceType": { "type": "string", "example": "Delivery" },
+          "orderDate": { "type": "string", "format": "date", "example": "2025-10-20" },
+          "assignedEmployee": {
+            "oneOf": [
+              { "type": "string", "example": "68f4877162af0bd0d2aa9e4d" },
+              {
+                "type": "object",
+                "properties": {
+                  "_id": { "type": "string" },
+                  "fullName": { "type": "string" },
+                  "email": { "type": "string" },
+                  "role": { "type": "string" }
+                }
+              }
+            ]
+          },
+          "employeeModel": { "type": "string", "example": "DeliveryPartner" },
+          "description": { "type": "string", "example": "Customer requested express delivery" },
+          "status": { "type": "string", "example": "Assigned" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+
+         "SubAdmin": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string", "example": "John Doe" },
+          "email": { "type": "string", "example": "john.doe@example.com" },
+          "phoneNumber": { "type": "string", "example": "(123) 456-7890" },
+          "password": { "type": "string", "example": "********" }
+        },
+        "required": ["fullName", "email", "phoneNumber", "password"]
+      },
+      "CreateBranchRequest": {
+        "type": "object",
+        "properties": {
+          "branchName": { "type": "string", "example": "Main Street Branch" },
+          "branchAddress": { "type": "string", "example": "123 Main St, Anytown, USA 12345" },
+          "subAdmin": { "$ref": "#/components/schemas/SubAdmin" }
+        },
+        "required": ["branchName", "branchAddress", "subAdmin"]
+      },
+      "UpdateBranchRequest": {
+        "type": "object",
+        "properties": {
+          "branchName": { "type": "string" },
+          "branchAddress": { "type": "string" },
+          "subAdmin": { "$ref": "#/components/schemas/SubAdmin" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "BranchResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Branch created successfully" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "_id": { "type": "string" },
+              "branchName": { "type": "string" },
+              "branchAddress": { "type": "string" },
+              "subAdmin": { "$ref": "#/components/schemas/SubAdmin" },
+              "isActive": { "type": "boolean" },
+              "createdAt": { "type": "string" },
+              "updatedAt": { "type": "string" }
+            }
+          }
+        }
+      },
+      "BranchesListResponse": {
+        "type": "object",
+        "properties": {
+          "count": { "type": "integer" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BranchResponse" }
+          }
+        }
+      }
       }
     },
     "tags": [
@@ -4003,6 +6938,45 @@
       {
         "name": "DeliveryPersonSchedule",
         "description": "Operations related to delivery person schedules"
-      }
-    ]
+      },
+      {
+        "name": "RepairTechnician",
+        "description": "API endpoints for Repair Service Technician management"
+      },
+      {
+      "name": "RepairService",
+      "description": "Endpoints for managing repair services"
+    },
+      {
+        "name": "Repair Technician Schedule",
+        "description": "APIs for managing repair technician service schedules"
+      },
+      {
+        "name": "ProductSeller",
+        "description": "API endpoints for Product Sellers"
+      },
+      {
+        "name": "Product",
+        "description": "API endpoints for managing product details and uploads."
+      },
+      {
+        "name": "SellerOrderTrack",
+        "description": "Operations related to seller order tracking"
+      },
+      {
+        "name": "ContactQuery",
+        "description": "APIs for handling contact queries from users"
+      },
+      {
+        "name": "Admin",
+        "description": "APIs for managing admin registration, login, and CRUD operations"
+      },
+       {
+      "name": "AssignOrder",
+      "description": "Endpoints to manage assigned orders"
+    },
+    {
+      "name": "Branch",
+      "description": "Operations related to branches and sub-admins"
+    }    ]
   }

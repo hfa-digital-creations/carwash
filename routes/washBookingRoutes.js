@@ -15,6 +15,8 @@ router.get("/getBookingsByCustomerId/:customerId", washBookingControllers.getBoo
 // Get booking by ID
 router.get("/getWashBookingById/:id", washBookingControllers.getBookingById);
 
+router.get("/getBookingDetails/:id", washBookingControllers.getBookingDetails);
+
 // Update booking by ID
 router.put("/updateWashBooking/:id", washBookingControllers.updateBooking);
 

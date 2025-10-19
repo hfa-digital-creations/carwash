@@ -2,37 +2,37 @@ import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema(
   {
-    // Customer reference
-    customerId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User", 
-      required: true 
+    // 🔹 Customer reference
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
 
-    // Step 1: Vehicle info
-    vehicleType: { 
-      type: String, 
-      enum: ["Car", "Bike"], 
-      required: true 
+    // 🔹 Vehicle info
+    vehicleType: {
+      type: String,
+      enum: ["Car", "Bike"],
+      required: true,
     },
     vehicleNumber: { type: String, required: true },
 
-    // Step 2: Embedded wash package details
+    // 🔹 Wash Package details
     washPackage: {
       packageName: { type: String, required: true },
       price: { type: Number, required: true },
-      description: { type: String },
-      features: [{ type: String }],
+      description: String,
+      features: [String],
     },
 
-    // Step 3: Service type
-    serviceType: { 
-      type: String, 
-      enum: ["Normal", "Express"], 
-      default: "Normal" 
+    // 🔹 Service Type
+    serviceType: {
+      type: String,
+      enum: ["Normal", "Express"],
+      default: "Normal",
     },
 
-    // Step 4: Address
+    // 🔹 Address
     address: {
       street: String,
       maxCars: Number,
@@ -44,35 +44,89 @@ const bookingSchema = new mongoose.Schema(
       },
     },
 
-    // Step 5: Date & Time
-    bookingDate: { type: Date, required: true },
-    bookingTime: { type: String, required: true },
+    // 🔹 Booking Date & Time
+    bookingDate: {
+      type: Date,
+      required: function () {
+        return this.serviceType === "Normal";
+      },
+      default: null,
+    },
+    bookingTime: {
+      type: String,
+      required: function () {
+        return this.serviceType === "Normal";
+      },
+      default: null,
+    },
 
-    // Step 6: Extra summary details
-    expressCharge: { type: Number, default: 0 }, // e.g. ₹10 for express
-    advanceBookingCharge: { type: Number, default: 0 }, // e.g. ₹10 for advance
-    totalAmount: { type: Number, required: true }, // e.g. ₹50 overall
+    // 🔹 Charges & Totals
+    expressCharge: { type: Number, default: 0 },
+    advanceBookingCharge: { type: Number, default: 0 },
+    totalAmount: { type: Number, required: true },
 
-    // Step 7: Coupon details
+    // 🔹 Coupon details
     discountAmount: { type: Number, default: 0 },
     couponCode: { type: String, default: null },
-    // Step 8: Payment
-    paymentMethod: { 
-      type: String, 
-      enum: ["Cash", "UPI", "Card"], 
-      required: true 
+
+    // 🔹 Payment details
+    paymentMethod: {
+      type: String,
+      enum: ["Cash", "UPI", "Card"],
+      required: true,
     },
-    paymentStatus: { 
-      type: String, 
-      enum: ["Pending", "Completed", "Paid"], 
-      default: "Pending" 
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Completed", "Paid"],
+      default: "Pending",
     },
 
-    // Step 9: Booking status
-    status: { 
-      type: String, 
-      enum: ["Pending", "Confirmed", "Declined", "On the Way", "Started", "Completed"], 
-      default: "Pending" 
+    // 🔹 Washer Details (new added)
+    washerDetails: {
+  washerId: { type: mongoose.Schema.Types.ObjectId, ref: "WasherEmployee" },
+  fullName: { type: String },
+  phone: { type: String },
+  avgRating: { type: Number, default: 0 }
+},
+
+isWasherAccepted: { 
+  type: Boolean, 
+  default: false 
+}, 
+    // 🔹 Wash Progress Tracking (new added)
+    progress: [
+      {
+        stage: {
+          type: String,
+          enum: [
+            "Confirmed",
+            "On The Way",
+            "Arrived",
+            "Washing In Progress",
+            "Completed",
+          ],
+        },
+        time: String,
+        status: { type: Boolean, default: false },
+      },
+    ],
+
+    // 🔹 Estimated arrival
+    estimatedArrival: { type: String, default: null },
+
+    // 🔹 Booking status
+    status: {
+      type: String,
+      enum: [
+        "Pending",
+        "Confirmed",
+        "Declined",
+        "On The Way",
+        "Started",
+        "Completed",
+        "Cancelled",
+      ],
+      default: "Pending",
     },
     cancelReason: { type: String, default: null },
     cancelledAt: { type: Date, default: null },

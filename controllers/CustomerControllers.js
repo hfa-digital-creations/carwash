@@ -1,7 +1,9 @@
 import Customer from "../models/customerModels.js";
 import Address from "../models/createAddressModels.js";
 import bcrypt from "bcryptjs";
-
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 // -------------------- Register User --------------------
 
 const registerUser = async (req, res) => {
@@ -69,7 +71,66 @@ const loginUser = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
 
+    const user = await Customer.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const otp = otpGenerator.generate(4, { upperCaseAlphabets: false, specialChars: false });
+    passwordResetStore[email] = { otp };
+
+    console.log("Forgot Password OTP:", otp);
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    });
+
+    await transporter.sendMail({
+      from: `"Car Wash Service" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Your OTP for Password Reset",
+      text: `Hello, your OTP for password reset is ${otp}.`,
+    });
+
+    res.status(200).json({ message: "OTP sent to email successfully ✅" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// -------------------- STEP 4: Reset Password Using OTP --------------------
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword, confirmPassword } = req.body;
+
+    if (!email || !otp || !newPassword || !confirmPassword)
+      return res.status(400).json({ message: "All fields are required" });
+
+    if (newPassword !== confirmPassword)
+      return res.status(400).json({ message: "Passwords do not match" });
+
+    const storedData = passwordResetStore[email];
+    if (!storedData || storedData.otp !== otp)
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+
+    const user = await Customer.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    delete passwordResetStore[email];
+
+    res.status(200).json({ message: "Password reset successfully ✅" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // -------------------- Get All Users --------------------
 const getAllUsers = async (req, res) => {
@@ -147,10 +208,6 @@ const updateProfile = async (req, res) => {
   }
 };
 
-
-
-
-
 // -------------------- Delete User --------------------
 const deleteUser = async (req, res) => {
   try {
@@ -167,6 +224,8 @@ const deleteUser = async (req, res) => {
 export default {
   registerUser,
   loginUser,
+  forgotPassword,
+  resetPassword,
   getAllUsers,
   getUserById,
   updateProfile,

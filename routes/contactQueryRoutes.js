@@ -13,3 +13,4 @@ router.get("/getAllQueries", contactQueryController.getAllQueries);
 router.get("/getQueryById/:id", contactQueryController.getQueryById);
 
 export default router;
+ 

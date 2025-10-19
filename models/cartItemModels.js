@@ -1,16 +1,27 @@
 import mongoose from "mongoose";
 
+// Cart Item Schema
 const cartItemSchema = new mongoose.Schema({
   // Product items
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-  productName: { type: String },
-  productDescription: { type: String },
+  product: {
+    type: {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      productTitle: String,
+      productDescription: String,
+      unitPrice: Number,
+      stockQuantity: Number,
+      productImage: String,
+      sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "ProductSeller" },
+    },
+    required: function () {
+      return !this.serviceItems || this.serviceItems.length === 0;
+    },
+  },
   quantity: { type: Number, default: 1 },
-  price: { type: Number },
   total: {
     type: Number,
     default: function () {
-      return this.quantity * this.price;
+      return this.quantity * (this.product?.unitPrice || 0);
     },
   },
 
@@ -18,8 +29,7 @@ const cartItemSchema = new mongoose.Schema({
   serviceItems: [
     {
       serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "ServiceItem", required: true },
-      productImage: { type: String },
-      productName: { type: String, required: true },
+      serviceTitle: { type: String, required: true },
       description: { type: String },
       serviceCharges: { type: Number, required: true },
       serviceStore: {
@@ -35,7 +45,7 @@ const cartItemSchema = new mongoose.Schema({
 const cartSchema = new mongoose.Schema(
   {
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    items: [cartItemSchema], // array of items
+    items: [cartItemSchema],
     subtotal: { type: Number, default: 0 },
   },
   { timestamps: true }
@@ -45,9 +55,10 @@ const cartSchema = new mongoose.Schema(
 cartSchema.pre("save", function (next) {
   let total = 0;
   this.items.forEach((item) => {
-    // For product items
-    if (item.productId && item.total) total += item.total;
-    // For service items
+    // Product total
+    if (item.product && item.quantity) total += item.quantity * item.product.unitPrice;
+
+    // Service total
     if (item.serviceItems && item.serviceItems.length > 0) {
       item.serviceItems.forEach((s) => {
         total += s.serviceCharges;

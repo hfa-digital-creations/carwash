@@ -56,7 +56,10 @@
 
       // ===== Step 6: Ratings Summary =====
     avgRating: { type: Number, default: 0 },
-    ratingCount: { type: Number, default: 0 }
+    ratingCount: { type: Number, default: 0 },
+    
+    // Admin control
+    isActive: { type: Boolean, default: false } // false by default, admin can activate
   }, { timestamps: true });
 
   // Create 2dsphere index for GPS queries

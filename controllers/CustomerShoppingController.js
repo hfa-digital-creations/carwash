@@ -1,4 +1,5 @@
 import CustomerShopping from "../models/CustomerShoppingModel.js";
+import Customer from "../models/customerModels.js";
 import mongoose from "mongoose";
 
 // -------------------- CREATE ORDER --------------------
@@ -10,11 +11,47 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // 🔹 1️⃣ Fetch customer details
+    const customer = await Customer.findById(customerId).select("fullName email phoneNumber");
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    // 🔹 2️⃣ Calculate subtotal & prepare cart items
+    let subtotal = 0;
+    const processedCartItems = cartItems.map((item) => {
+      const total = item.unitPrice * item.quantity;
+      subtotal += total;
+      return {
+        productId: item.productId,
+        productTitle: item.productTitle,
+        productDescription: item.productDescription,
+        unitPrice: item.unitPrice,
+        stockQuantity: item.stockQuantity || 0,
+        productImage: item.productImage || "",
+        quantity: item.quantity,
+        total,
+      };
+    });
+
+    // 🔹 3️⃣ Prepare payment details
+    const orderPayment = {
+      ...payment,
+      amount: payment.amount || subtotal,
+    };
+
+    // 🔹 4️⃣ Embed customer snapshot inside the order
     const order = new CustomerShopping({
       customerId,
-      cartItems,
+      customerDetails: {
+        name: customer.fullName,
+        email: customer.email,
+        phone: customer.phoneNumber,
+      },
+      cartItems: processedCartItems,
+      subtotal,
       address,
-      payment,
+      payment: orderPayment,
       orderStatus: "Pending",
     });
 
@@ -29,7 +66,6 @@ const createOrder = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 // -------------------- GET ALL ORDERS --------------------
 const getAllOrders = async (req, res) => {
   try {

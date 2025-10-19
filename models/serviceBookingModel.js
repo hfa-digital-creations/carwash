@@ -2,15 +2,15 @@ import mongoose from "mongoose";
 
 const serviceBookingSchema = new mongoose.Schema(
   {
-    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
     serviceItems: [
       {
         serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "ServiceItem", required: true },
-        productImage: { type: String }, // URL or path of the image
+        productImage: { type: String },
         productName: { type: String, required: true },
         description: { type: String },
-        serviceCharges: { type: Number, required: true }, // like 500-2000
+        serviceCharges: { type: Number, required: true },
         serviceStore: {
           storeName: { type: String, required: true },
           storeAddress: { type: String, required: true },
@@ -25,12 +25,12 @@ const serviceBookingSchema = new mongoose.Schema(
       pincode: { type: String, required: true },
       location: {
         type: { type: String, enum: ["Point"], default: "Point" },
-        coordinates: { type: [Number], required: true }, // [longitude, latitude]
+        coordinates: { type: [Number], required: true },
       },
     },
 
     date: { type: Date, required: true },
-    time: { type: String, required: true }, // "HH:mm" format
+    time: { type: String, required: true },
 
     payment: {
       method: { type: String, required: true },
@@ -41,12 +41,34 @@ const serviceBookingSchema = new mongoose.Schema(
 
     serviceStatus: {
       type: String,
-      enum: ["Pending", "Processing", "Completed", "Cancelled"],
+      enum: ["Pending", "Accepted", "Processing", "Completed", "Cancelled"],
       default: "Pending",
     },
+
+    repairTechnicianId: { type: mongoose.Schema.Types.ObjectId, ref: "RepairTechnician" },
+
+    // ✅ NEW FIELDS
+    isTechnicianAccepted: { type: Boolean, default: false },
+    technicianDetails: {
+      technicianId: { type: mongoose.Schema.Types.ObjectId, ref: "RepairTechnician" },
+      fullName: { type: String },
+      phone: { type: String },
+      avgRating: { type: Number },
+    },
+    estimatedArrival: { type: Date },
+    progress: [
+      {
+        status: { type: String },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    technicianAcceptedAt: { type: Date },
+    cancelReason: { type: String },
   },
   { timestamps: true }
 );
+
 
 const CustomerService = mongoose.model("CustomerService", serviceBookingSchema);
 

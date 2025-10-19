@@ -15,6 +15,8 @@ router.get("/getServiceOrdersByCustomer/:customerId", serviceBookingController.g
 // Get single service order by ID
 router.get("/getServiceOrderById/:orderId", serviceBookingController.getServiceOrderById);
 
+router.get("/getServiceBookingDetails/:id", serviceBookingController.getServiceBookingDetails);
+
 router.put("/cancelServiceOrder/:orderId", serviceBookingController.cancelServiceOrder);
 
 // Update service order

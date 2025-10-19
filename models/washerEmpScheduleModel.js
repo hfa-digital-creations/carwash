@@ -6,7 +6,7 @@ const washerEmpScheduleSchema = new mongoose.Schema(
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true },
     status: {
       type: String,
-      enum: [,"On the Way", "Started", "Completed", "Declined"],
+      enum: [,"On the Way", "Started","Washing In Progress", "Completed", "Declined"],
       default: "On the Way",
     },
   },

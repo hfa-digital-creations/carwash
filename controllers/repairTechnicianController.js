@@ -1,0 +1,131 @@
+import RepairTechnician from "../models/repairTechnicianModel.js";
+import mongoose from "mongoose";
+import Service from "../models/serviceModel.js"; 
+
+
+// ✅ Create a Repair Technician along with services
+const createRepairTechnician = async (req, res) => {
+  try {
+    const { services, ...technicianData } = req.body;
+
+    // 1️⃣ Create technician
+    const technician = new RepairTechnician({ ...technicianData });
+    await technician.save();
+
+    // 2️⃣ Save services to the technician document (embedded)
+    if (services && Array.isArray(services)) {
+      technician.services = services.map(s => ({
+        itemName: s.itemName,
+        subTitle: s.subTitle,
+        description: s.description,
+        minPrice: s.minPrice,
+        maxPrice: s.maxPrice,
+        itemImage: s.itemImage,
+      }));
+      await technician.save();
+
+      // 3️⃣ Save each service in the Service collection
+      const serviceDocs = services.map(s => ({
+        ...s,
+        repairTechnicianId: technician._id, // set technician ID
+      }));
+
+      await Service.insertMany(serviceDocs); // bulk insert
+    }
+
+    res.status(201).json({
+      message: "Repair Technician created successfully",
+      data: technician,
+    });
+  } catch (error) {
+    res.status(400).json({ message: "Error creating Repair Technician", error: error.message });
+  }
+};
+
+
+// ✅ Get all Repair Technicians
+const getAllRepairTechnicians = async (req, res) => {
+  try {
+    const technicians = await RepairTechnician.find().sort({ createdAt: -1 });
+    res.status(200).json({
+      message: "All Repair Technicians fetched successfully",
+      data: technicians,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching technicians", error: error.message });
+  }
+};
+
+// ✅ Get Repair Technician by ID
+const getRepairTechnicianById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ message: "Invalid ID" });
+
+    const technician = await RepairTechnician.findById(id);
+    if (!technician)
+      return res.status(404).json({ message: "Repair Technician not found" });
+
+    res.status(200).json({
+      message: "Repair Technician fetched successfully",
+      data: technician,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching technician", error: error.message });
+  }
+};
+
+// ✅ Update Repair Technician (full update including services)
+const updateRepairTechnician = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid ID" });
+
+    const { services, ...technicianData } = req.body;
+
+    const technician = await RepairTechnician.findByIdAndUpdate(id, technicianData, { new: true, runValidators: true });
+    if (!technician) return res.status(404).json({ message: "Technician not found" });
+
+    if (services && Array.isArray(services)) {
+      technician.services = services.map(s => ({
+        itemName: s.itemName,
+        subTitle: s.subTitle,
+        description: s.description,
+        minPrice: s.minPrice,
+        maxPrice: s.maxPrice,
+        itemImage: s.itemImage,
+      }));
+      await technician.save();
+    }
+
+    res.status(200).json({ message: "Repair Technician updated successfully", data: technician });
+  } catch (error) {
+    res.status(400).json({ message: "Error updating technician", error: error.message });
+  }
+};
+
+// ✅ Delete Repair Technician
+const deleteRepairTechnician = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ message: "Invalid ID" });
+
+    const deletedTechnician = await RepairTechnician.findByIdAndDelete(id);
+    if (!deletedTechnician)
+      return res.status(404).json({ message: "Repair Technician not found" });
+
+    res.status(200).json({ message: "Repair Technician deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting technician", error: error.message });
+  }
+};
+
+export default {
+  createRepairTechnician,
+  getAllRepairTechnicians,
+  getRepairTechnicianById,
+  updateRepairTechnician,
+  deleteRepairTechnician,
+};
