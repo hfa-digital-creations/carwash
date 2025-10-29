@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import RepairTechnicianSchedule from "../models/repairTechnicianScheduleModel.js";
 import CustomerService from "../models/serviceBookingModel.js";
 import RepairTechnician from "../models/repairTechnicianModel.js";
-
-// ✅ Accept a service request
+  
+// ✅ Accept a service request (Only one technician can accept)
 const acceptService = async (req, res) => {
   try {
     const { customerServiceId, repairTechnicianId } = req.body;
@@ -15,36 +15,60 @@ const acceptService = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    // ✅ Check that the person is a repair technician
-    const technician = await RepairTechnician.findById(repairTechnicianId);
-    if (!technician || technician.role !== "Repair Service Technician") {
-      return res.status(400).json({ message: "User is not a Repair Technician" });
+    // ✅ Find the service booking
+    const service = await CustomerService.findById(customerServiceId);
+    if (!service) {
+      return res.status(404).json({ message: "Service booking not found" });
     }
 
-    // 1️⃣ Create schedule for technician
+    // ✅ Prevent multiple acceptance
+    if (service.isTechnicianAccepted) {
+      return res.status(400).json({
+        message: "This service booking has already been accepted by another technician ❌",
+      });
+    }
+
+    // ✅ Check if technician is valid
+    const technician = await RepairTechnician.findById(repairTechnicianId);
+    if (!technician || technician.role !== "Repair Service Technician") {
+      return res.status(400).json({ message: "User is not a valid Repair Technician" });
+    }
+
+    // ✅ Create new schedule for technician
     const schedule = await RepairTechnicianSchedule.create({
       repairTechnicianId,
       customerServiceId,
       status: "On the Way",
+      progress: ["On the Way"],
     });
 
-    // 2️⃣ Update service request status
-    const updatedService = await CustomerService.findByIdAndUpdate(
-      customerServiceId,
-      { serviceStatus: "On the Way" },
-      { new: true }
-    );
+    // ✅ Update the customer service booking
+    service.serviceStatus = "On the Way";
+    service.isTechnicianAccepted = true;
+    service.technicianDetails = {
+      technicianId: technician._id,
+      fullName: technician.fullName,
+      phone: technician.phoneNumber,
+      avgRating: technician.rating || 0,
+    };
+
+    // ✅ Add progress update
+    service.progress.push({ status: "Confirmed", updatedAt: new Date() });
+
+    await service.save();
 
     res.status(200).json({
-      message: "Service accepted and status updated",
+      message: "Service accepted successfully ✅",
       schedule,
-      updatedService,
+      updatedService: service,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error in acceptService:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+;
+
 
 
 // ✅ Decline a service
@@ -74,6 +98,11 @@ const updateServiceStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
+    const validStatuses = ["On the Way", "Processing", "Completed", "Cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
     const updatedSchedule = await RepairTechnicianSchedule.findByIdAndUpdate(
       scheduleId,
       { status },
@@ -85,20 +114,24 @@ const updateServiceStatus = async (req, res) => {
 
     const updatedService = await CustomerService.findByIdAndUpdate(
       updatedSchedule.customerServiceId,
-      { serviceStatus: status },
+      {
+        serviceStatus: status,
+        $push: { progress: { status, updatedAt: new Date() } },
+      },
       { new: true }
     );
 
     res.status(200).json({
-      message: "Status updated successfully",
+      message: "Status & progress updated successfully ✅",
       updatedSchedule,
       updatedService,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error updating service status:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // ✅ Get all schedules or schedules for a specific technician
 const getAllSchedules = async (req, res) => {

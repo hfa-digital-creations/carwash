@@ -22,6 +22,8 @@ import sellerOrderTrackRoutes from "./sellerOrderTrackRoutes.js";
 import adminRegistration from "./AdminRoutes/adminRegistrationRoutes.js"
 import assignOrderRoutes from "./AdminRoutes/assignOrderRoutes.js"
 import branchRoutes from "./AdminRoutes/branchRoutes.js";
+import adminUserRoutes from "./AdminRoutes/adminUserRoutes.js"
+import AdminReferralRoutes from "./AdminRoutes/adminReferralRoutes.js";
 const router = express.Router()
 
 router.get("/", (req, res) => {
@@ -59,6 +61,9 @@ router.use("/sellerOrderTrack",sellerOrderTrackRoutes)
 
 // -------------------- Admin FLOW --------------------
 router.use("/adminRegistration",adminRegistration)
+router.use("/adminUser",adminUserRoutes)
 router.use("/assignOrder",assignOrderRoutes)
 router.use("/adminbranch",branchRoutes)
+router.use("/AdminReferral",AdminReferralRoutes)
+
 export default router   

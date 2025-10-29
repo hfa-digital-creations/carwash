@@ -12,12 +12,13 @@ router.get("/getAllOrders", CustomerShoppingController.getAllOrders);
 // Get order by ID
 router.get("/getOrderById/:id", CustomerShoppingController.getOrderById);
 
+// ✅ New Route — Get Full Order Details (Customer + Picker + Products)
+router.get("/getOrderDetails/:id", CustomerShoppingController.getOrderDetailsById);
+
 // Get orders by customer ID
 router.get("/getOrderedItems/:customerId", CustomerShoppingController.getOrderedItems);
 
-// Update order by ID
-// router.put("/updateOrder/:id", CustomerShoppingController.updateOrder);
-
+// Cancel order by ID
 router.put("/cancelOrder/:id", CustomerShoppingController.cancelOrder);
 
 // Delete order by ID

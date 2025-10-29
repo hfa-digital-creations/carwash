@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const serviceBookingSchema = new mongoose.Schema(
   {
+    // 🔹 Auto-generated unique service order ID
+    serviceOrderId: {
+      type: String,
+      unique: true,
+      default: null,
+    },
+
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
     serviceItems: [
@@ -47,7 +54,6 @@ const serviceBookingSchema = new mongoose.Schema(
 
     repairTechnicianId: { type: mongoose.Schema.Types.ObjectId, ref: "RepairTechnician" },
 
-    // ✅ NEW FIELDS
     isTechnicianAccepted: { type: Boolean, default: false },
     technicianDetails: {
       technicianId: { type: mongoose.Schema.Types.ObjectId, ref: "RepairTechnician" },
@@ -55,13 +61,18 @@ const serviceBookingSchema = new mongoose.Schema(
       phone: { type: String },
       avgRating: { type: Number },
     },
+
     estimatedArrival: { type: Date },
-    progress: [
-      {
-        status: { type: String },
-        updatedAt: { type: Date, default: Date.now },
-      },
-    ],
+
+    progress: {
+      type: [
+        {
+          status: { type: String },
+          updatedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [{ status: "Pending", updatedAt: Date.now() }],
+    },
 
     technicianAcceptedAt: { type: Date },
     cancelReason: { type: String },
@@ -69,6 +80,31 @@ const serviceBookingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ✅ Auto-generate unique service order ID (#SORD10001, #SORD10002...)
+serviceBookingSchema.pre("save", async function (next) {
+  if (!this.serviceOrderId) {
+    try {
+      const lastOrder = await mongoose
+        .model("CustomerService")
+        .findOne({ serviceOrderId: { $exists: true } })
+        .sort({ createdAt: -1 });
+
+      let lastNumber = 10000;
+      if (lastOrder && lastOrder.serviceOrderId) {
+        const num = parseInt(lastOrder.serviceOrderId.replace("#SORD", ""));
+        if (!isNaN(num)) lastNumber = num;
+      }
+
+      this.serviceOrderId = `#SORD${lastNumber + 1}`;
+      next();
+    } catch (err) {
+      console.error("Error generating serviceOrderId:", err);
+      next(err);
+    }
+  } else {
+    next();
+  }
+});
 
 const CustomerService = mongoose.model("CustomerService", serviceBookingSchema);
 

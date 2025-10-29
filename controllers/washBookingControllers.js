@@ -2,6 +2,8 @@ import Booking from "../models/washBookingModels.js";
 import Customer from "../models/customerModels.js";
 import WashService from "../models/washServiceType.js";
 import washerEmp from "../models/washerEmpRegistrationModel.js";
+import WasherEmpSchedule from "../models/washerEmpScheduleModel.js"; // ✅ add this line
+
 import mongoose from "mongoose";
 
 
@@ -12,7 +14,7 @@ const createBooking = async (req, res) => {
       customerId,
       vehicleType,
       vehicleNumber,
-      washPackage,
+      washPackageId, // ✅ changed to ID
       serviceType,
       address,
       bookingDate,
@@ -26,28 +28,30 @@ const createBooking = async (req, res) => {
     } = req.body;
 
     // ✅ Basic validation
-    if (!customerId || !vehicleType || !vehicleNumber || !washPackage?.packageName) {
+    if (!customerId || !vehicleType || !vehicleNumber || !washPackageId) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // ✅ Service type-based validation
-    if (serviceType === "Normal") {
-      if (!bookingDate || !bookingTime) {
-        return res.status(400).json({
-          message: "Booking date and time required for normal service",
-        });
-      }
+    // ✅ Service type validation
+    if (serviceType === "Normal" && (!bookingDate || !bookingTime)) {
+      return res.status(400).json({
+        message: "Booking date and time required for normal service",
+      });
     }
 
-    // ✅ Customer check
+    // ✅ Check customer
     const customerExists = await Customer.findById(customerId);
     if (!customerExists)
-      return res.status(400).json({ message: "Customer not found" });
+      return res.status(404).json({ message: "Customer not found" });
+
+    // ✅ Fetch selected wash package
+    const selectedPackage = await WashService.findById(washPackageId);
+    if (!selectedPackage)
+      return res.status(404).json({ message: "Wash package not found" });
 
     // ✅ Calculate total
-    const basePrice = washPackage.price || 0;
-    const totalBeforeDiscount =
-      basePrice + expressCharge + advanceBookingCharge;
+    const basePrice = selectedPackage.price;
+    const totalBeforeDiscount = basePrice + expressCharge + advanceBookingCharge;
     const totalAfterDiscount = Math.max(totalBeforeDiscount - discountAmount, 0);
 
     // ✅ Create booking document
@@ -56,10 +60,10 @@ const createBooking = async (req, res) => {
       vehicleType,
       vehicleNumber,
       washPackage: {
-        packageName: washPackage.packageName,
-        price: washPackage.price,
-        description: washPackage.description,
-        features: washPackage.features,
+        packageName: selectedPackage.packageName,
+        price: selectedPackage.price,
+        description: selectedPackage.description,
+        features: selectedPackage.features,
       },
       serviceType,
       address,
@@ -168,24 +172,44 @@ const getBookingDetails = async (req, res) => {
       return res.status(400).json({ message: "Invalid booking ID" });
     }
 
-    // ✅ Populate both Customer & Washer info
+    // ✅ Fetch booking & populate washer + customer info
     const booking = await Booking.findById(id)
       .populate("customerId", "fullName email phoneNumber address")
-      .populate("washerDetails.washerId", "fullName email phoneNumber rating");
+      .populate("washerDetails.washerId", "fullName email phone avgRating");
 
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
+    // ✅ Fetch schedule using the correct model
+    const schedule = await WasherEmpSchedule.findOne({ bookingId: id });
+
+    // ✅ If no schedule yet
+    if (!schedule) {
+      return res.status(200).json({
+        message: "Booking fetched successfully (no schedule yet)",
+        booking,
+        progress: ["Pending"],
+      });
+    }
+
+    // ✅ Use schedule progress
+    const progressMessages = schedule.progress || ["Pending"];
+
     res.status(200).json({
       message: "Booking details fetched successfully ✅",
       booking,
+      progress: progressMessages,
+       // Optional: also return current status
     });
   } catch (error) {
     console.error("Error fetching booking details:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+
 
 // -------------------- CANCEL BOOKING --------------------
 const cancelBooking = async (req, res) => {

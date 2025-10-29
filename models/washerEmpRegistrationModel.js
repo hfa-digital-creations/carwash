@@ -1,68 +1,68 @@
-  import mongoose from "mongoose";
+import mongoose from "mongoose";
 
-  const washerEmployeeSchema = new mongoose.Schema({
-    // ===== Step 1: Personal Information =====
-    fullName: { type: String, required: true },
-    phone: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    dateOfBirth: { type: Date, required: true },
-    gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
-    referralCode: { type: String },
-    serviceCategories: [{ type: String }], // e.g., ["Washing", "Repair"]
+const washerEmployeeSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  phone: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  dateOfBirth: { type: Date, required: true },
+  gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
+  serviceCategories: [{ type: String }],
+  role: { 
+    type: String, 
+    enum: ["Washing Personnel", "Delivery Person", "Repair Service Technician", "Product Seller"], 
+    required: true 
+  },
 
-    // ===== Step 2: Role Selection =====
-    role: { 
-      type: String, 
-      enum: ["Washing Personnel", "Delivery Person", "Repair Service Technician", "Product Seller"], 
-      required: true 
-    },
+  address: {
+    street: { type: String, required: true },
+    city: { type: String },
+    state: { type: String },
+    postalCode: { type: String },
+    country: { type: String },
+    location: { type: { type: String, enum: ["Point"], default: "Point" }, coordinates: { type: [Number], default: [0, 0] } }
+  },
+  emergencyContact: { name: { type: String, required: true }, phone: { type: String, required: true } },
 
-    // ===== Step 3: Address & Emergency Contact =====
-    address: {
-      street: { type: String, required: true },
-      city: { type: String },
-      state: { type: String },
-      postalCode: { type: String },
-      country: { type: String },
-      location: {
-        type: { type: String, enum: ["Point"], default: "Point" },
-        coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]
-      }
-    },
-    emergencyContact: {
-      name: { type: String, required: true },
-      phone: { type: String, required: true }
-    },
+  vehicle: {
+    type: { type: String },
+    model: { type: String },
+    licensePlate: { type: String },
+    registrationCertificate: { type: String },
+    drivingLicense: { type: String },
+    documentVerified: { type: Boolean, default: false }
+  },
 
-    // ===== Step 4: Vehicle Details =====
-    vehicle: {
-      type: { type: String }, // e.g., "Bike", "Car"
-      model: { type: String },
-      licensePlate: { type: String },
-      registrationCertificate: { type: String }, // file path or URL
-      drivingLicense: { type: String }, // file path or URL
-      documentVerified: { type: Boolean, default: false }
-    },
+  bankDetails: {
+    accountHolderName: { type: String },
+    accountNumber: { type: String },
+    ifscCode: { type: String },
+    aadhaarCard: { type: String }
+  },
 
-    // ===== Step 5: Bank & Payout Details =====
-    bankDetails: {
-      accountHolderName: { type: String },
-      accountNumber: { type: String },
-      ifscCode: { type: String },
-      aadhaarCard: { type: String } // file path or URL
-    },
-    termsAccepted: { type: Boolean, default: false },
+  termsAccepted: { type: Boolean, default: false },
+  avgRating: { type: Number, default: 0 },
+  ratingCount: { type: Number, default: 0 },
 
-      // ===== Step 6: Ratings Summary =====
-    avgRating: { type: Number, default: 0 },
-    ratingCount: { type: Number, default: 0 },
-    
-    // Admin control
-    isActive: { type: Boolean, default: false } // false by default, admin can activate
-  }, { timestamps: true });
+  // Referral code auto-generation
+  referralCode: { type: String, unique: true },
+  referredBy: { type: String, default: null },
 
-  // Create 2dsphere index for GPS queries
-  washerEmployeeSchema.index({ "address.location": "2dsphere" });
+  isActive: { type: Boolean, default: false }
+}, { timestamps: true });
 
-  export default mongoose.model("WasherEmployee", washerEmployeeSchema);
+// Auto-generate referral code before saving
+washerEmployeeSchema.pre("save", function (next) {
+  if (!this.referralCode) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    this.referralCode = code;
+  }
+  next();
+});
+
+// Create 2dsphere index for GPS
+washerEmployeeSchema.index({ "address.location": "2dsphere" });
+
+export default mongoose.model("WasherEmployee", washerEmployeeSchema);

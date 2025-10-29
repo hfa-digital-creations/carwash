@@ -8,7 +8,7 @@ import nodemailer from "nodemailer";
 
 const registerUser = async (req, res) => {
   try {
-    const { fullName, email, phoneNumber, password, confirmPassword } = req.body;
+    const { fullName, email, phoneNumber, password, confirmPassword, referredBy } = req.body;
 
     if (!fullName || !email || !phoneNumber || !password || !confirmPassword)
       return res.status(400).json({ message: "All fields are required" });
@@ -22,30 +22,43 @@ const registerUser = async (req, res) => {
     const existingPhone = await Customer.findOne({ phoneNumber });
     if (existingPhone) return res.status(400).json({ message: "Phone number already exists" });
 
+    // 🔍 If referral code entered, validate it
+    if (referredBy) {
+      const referrer = await Customer.findOne({ referralCode: referredBy });
+      if (!referrer) {
+        return res.status(400).json({ message: "Invalid referral code" });
+      }
+    }
+
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10); // 10 salt rounds
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new Customer({
       fullName,
       email: email.toLowerCase(),
       phoneNumber,
-      password: hashedPassword, // store hashed password
+      password: hashedPassword,
+      referredBy: referredBy || null,
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully ✅", user: newUser });
+    res.status(201).json({
+      message: "User registered successfully ✅",
+      user: {
+        id: newUser._id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+        referralCode: newUser.referralCode,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-
-
 // -------------------- Login User --------------------
-
-
 const loginUser = async (req, res) => {
   try {
     const { emailOrPhone, password } = req.body;
@@ -132,16 +145,33 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// -------------------- Get All Users --------------------
+// -------------------- Get All Users with Address --------------------
 const getAllUsers = async (req, res) => {
   try {
-    const users = await Customer.find();
-    res.status(200).json({ users });
+    const users = await Customer.find()
+      .lean(); // convert to plain JS object for easy modification
+
+    // Fetch address for each user
+    const usersWithAddress = await Promise.all(
+      users.map(async (user) => {
+        const address = await Address.findOne({ userId: user._id });
+        return {
+          ...user,
+          address: address || null, // attach address (if any)
+        };
+      })
+    );
+
+    res.status(200).json({
+      message: "Users fetched successfully ✅",
+      users: usersWithAddress,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 // -------------------- Get User By ID --------------------
 const getUserById = async (req, res) => {

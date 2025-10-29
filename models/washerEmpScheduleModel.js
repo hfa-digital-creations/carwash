@@ -9,6 +9,7 @@ const washerEmpScheduleSchema = new mongoose.Schema(
       enum: [,"On the Way", "Started","Washing In Progress", "Completed", "Declined"],
       default: "On the Way",
     },
+     progress: { type: [String], default: ["On the Way"] }
   },
   { timestamps: true } // ✅ This is correct
 );

@@ -26,15 +26,26 @@ const acceptOrder = async (req, res) => {
       status: "On the Way",
     });
 
-    // 2️⃣ Update order status to "On the Way"
+    // 2️⃣ Update order status and delivery details in CustomerShopping
     const updatedOrder = await CustomerShopping.findByIdAndUpdate(
       customerShoppingId,
-      { orderStatus: "On the Way" },
+      {
+         orderStatus: "Confirmed",
+        isDeliveryAccepted: true,
+        deliveryPersonDetails: {
+          deliveryPersonId: employee._id,
+          fullName: employee.fullName,
+          phone: employee.phone,
+          avgRating: employee.avgRating || 0,
+          vehicleType: employee.vehicle?.type || "N/A",
+        },
+         $push: { progress: { status: "Confirmed" } },
+      },
       { new: true }
     );
 
     res.status(200).json({
-      message: "Order accepted and status updated",
+      message: "Order accepted and delivery person details updated",
       schedule,
       updatedOrder,
     });
@@ -43,6 +54,7 @@ const acceptOrder = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // ✅ Decline an order
 const declineOrder = async (req, res) => {
@@ -83,7 +95,9 @@ const updateOrderStatus = async (req, res) => {
     // 2️⃣ Update the CustomerShopping order status as well
     const updatedOrder = await CustomerShopping.findByIdAndUpdate(
       updatedSchedule.customerShoppingId,
-      { orderStatus: status },
+      { orderStatus: status ,
+         $push: { progress: { status } },
+       },
       { new: true }
     );
 

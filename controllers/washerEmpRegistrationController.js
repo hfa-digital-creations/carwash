@@ -1,4 +1,5 @@
 import WasherEmployee from "../models/washerEmpRegistrationModel.js";
+import Referral from "../models/ReferralModel.js";
 import mongoose from "mongoose";
 
 // Create new washer employee with file upload
@@ -6,7 +7,22 @@ const createWasherEmployee = async (req, res) => {
   try {
     const body = req.body;
 
-    // Build the nested object
+    // ✅ Check for existing phone/email
+    const existingPhone = await WasherEmployee.findOne({ phone: body.phone });
+    if (existingPhone) return res.status(400).json({ message: "Phone number already exists" });
+
+    const existingEmail = await WasherEmployee.findOne({ email: body.email });
+    if (existingEmail) return res.status(400).json({ message: "Email already exists" });
+
+    // ✅ Generate unique referral code
+    let referralCode = "";
+    let codeExists = true;
+    while (codeExists) {
+      referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const existingCode = await WasherEmployee.findOne({ referralCode });
+      if (!existingCode) codeExists = false;
+    }
+
     const data = {
       fullName: body.fullName,
       phone: body.phone,
@@ -14,24 +30,19 @@ const createWasherEmployee = async (req, res) => {
       password: body.password,
       dateOfBirth: body.dateOfBirth,
       gender: body.gender,
-      referralCode: body.referralCode,
       serviceCategories: body.serviceCategories?.split(",") || [],
       role: body.role,
+      referralCode, // set generated code
+      referredBy: body.referredBy || null,
       address: {
         street: body.street,
         city: body.city,
         state: body.state,
         postalCode: body.postalCode,
         country: body.country,
-        location: {
-          type: "Point",
-          coordinates: [body.longitude, body.latitude],
-        },
+        location: { type: "Point", coordinates: [body.longitude, body.latitude] },
       },
-      emergencyContact: {
-        name: body.emergencyName,
-        phone: body.emergencyPhone,
-      },
+      emergencyContact: { name: body.emergencyName, phone: body.emergencyPhone },
       vehicle: {
         type: body.vehicleType,
         model: body.vehicleModel,
@@ -49,13 +60,36 @@ const createWasherEmployee = async (req, res) => {
       termsAccepted: body.termsAccepted === "true",
     };
 
+    // ✅ Create employee
     const newEmployee = await WasherEmployee.create(data);
+
+    // ✅ Create Referral Record if referredBy code is used
+    if (body.referredBy) {
+  const referrer = await WasherEmployee.findOne({ referralCode: body.referredBy });
+
+  if (referrer) {
+    await Referral.create({
+      referrerId: referrer._id,
+      referrerName: referrer.fullName,
+      referrerType: "WasherEmployee",
+      referralCode: referrer.referralCode,
+      referredUserId: newEmployee._id,
+      referredUserName: newEmployee.fullName,
+      referredUserType: "WasherEmployee",
+      usedCode: body.referredBy,
+      signupDate: newEmployee.createdAt,
+      status: "Pending",
+    });
+  }
+}
+
     res.status(201).json({ message: "Washer employee created", employee: newEmployee });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 
 // Update washer employee by ID with file upload

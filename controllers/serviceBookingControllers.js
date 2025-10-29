@@ -106,7 +106,6 @@ const getServiceBookingDetails = async (req, res) => {
       return res.status(400).json({ message: "Invalid service booking ID" });
     }
 
-    // 🔹 Fetch the booking
     const booking = await CustomerService.findById(id)
       .populate("customerId", "fullName email phoneNumber")
       .lean();
@@ -115,12 +114,10 @@ const getServiceBookingDetails = async (req, res) => {
       return res.status(404).json({ message: "Service booking not found" });
     }
 
-    // 🔹 Check if any technician accepted this booking
     const schedule = await Schedule.findOne({ customerServiceId: id })
       .populate("repairTechnicianId", "fullName phoneNumber email rating")
       .lean();
 
-    // 🔹 Technician Details (if accepted)
     let technicianDetails = null;
     let isTechnicianAccepted = false;
 
@@ -134,7 +131,12 @@ const getServiceBookingDetails = async (req, res) => {
       isTechnicianAccepted = true;
     }
 
-    // 🔹 Final formatted response
+    // ✅ Remove _id from progress entries
+    const cleanProgress = booking.progress.map(p => ({
+      status: p.status,
+      updatedAt: p.updatedAt,
+    }));
+
     const result = {
       _id: booking._id,
       customerId: booking.customerId,
@@ -146,6 +148,7 @@ const getServiceBookingDetails = async (req, res) => {
       serviceStatus: booking.serviceStatus,
       isTechnicianAccepted,
       technicianDetails,
+      progress: cleanProgress,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
     };

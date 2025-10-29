@@ -1,51 +1,70 @@
 import WasherEmpSchedule from "../models/washerEmpScheduleModel.js";
 import Booking from "../models/washBookingModels.js";
 import WasherEmp from "../models/washerEmpRegistrationModel.js";
-
 import mongoose from "mongoose";
 
-// Accept a booking
+const STATUS_FLOW = ["On the Way", "Started", "Washing In Progress", "Completed"];
+
+// -------------------- ACCEPT BOOKING --------------------
 const acceptBooking = async (req, res) => {
   try {
     const { bookingId, washerId } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(bookingId) || !mongoose.Types.ObjectId.isValid(washerId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(bookingId) ||
+      !mongoose.Types.ObjectId.isValid(washerId)
+    ) {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    // 🧩 Find washer details
-    const washer = await WasherEmp.findById(washerId);
-    if (!washer) {
-      return res.status(404).json({ message: "Washer employee not found" });
+    // ✅ Check if booking exists
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
     }
 
-    // ✅ Create washer schedule
+    // ✅ Prevent multiple acceptance
+    if (booking.isWasherAccepted) {
+      return res.status(400).json({
+        message: "This booking has already been accepted by another washer ❌",
+      });
+    }
+
+    // ✅ Check washer
+    const washer = await WasherEmp.findById(washerId);
+    if (!washer)
+      return res.status(404).json({ message: "Washer employee not found" });
+
+    // ✅ Create schedule
     const schedule = await WasherEmpSchedule.create({
       washerEmployeeId: washerId,
       bookingId,
-      status: "On the Way"
+      status: "On the Way",
+      progress: ["On the Way"],
     });
 
-    // ✅ Update booking with washer details & status
-    const updatedBooking = await Booking.findByIdAndUpdate(
-      bookingId,
-      {
-        status: "On the Way",
-        isWasherAccepted: true, // ✅ mark as accepted
-        washerDetails: {
-          washerId: washer._id,
-          fullName: washer.fullName,
-          phone: washer.phone,
-          avgRating: washer.avgRating
-        }
-      },
-      { new: true }
-    );
+    // ✅ Update booking to reflect washer acceptance
+    booking.status = "On the Way";
+    booking.isWasherAccepted = true;
+    booking.washerDetails = {
+      washerId: washer._id,
+      fullName: washer.fullName,
+      phone: washer.phone,
+      avgRating: washer.avgRating,
+    };
+    await booking.save();
+
+    // ✅ Calculate progress %
+    const STATUS_FLOW = ["On the Way", "Started", "Washing In Progress", "Completed"];
+    const progressPercent =
+      ((STATUS_FLOW.indexOf(schedule.status) + 1) / STATUS_FLOW.length) * 100;
 
     res.status(200).json({
       message: "Booking accepted successfully ✅",
       schedule,
-      updatedBooking
+      updatedBooking: booking,
+      progress: schedule.progress,
+      progressPercent,
     });
   } catch (err) {
     console.error("Error accepting booking:", err);
@@ -53,15 +72,17 @@ const acceptBooking = async (req, res) => {
   }
 };
 
-// Decline a booking
- const declineBooking = async (req, res) => {
+
+// -------------------- DECLINE BOOKING --------------------
+const declineBooking = async (req, res) => {
   try {
     const { bookingId, washerId } = req.body;
 
     const schedule = await WasherEmpSchedule.create({
       washerEmployeeId: washerId,
       bookingId,
-      status: "Declined"
+      status: "Declined",
+      progress: ["Declined"],
     });
 
     res.status(200).json({ message: "Booking declined", schedule });
@@ -70,7 +91,7 @@ const acceptBooking = async (req, res) => {
   }
 };
 
-// Update status (On the Way / Started / Completed)
+// -------------------- UPDATE STATUS --------------------
 const updateBookingStatus = async (req, res) => {
   try {
     const { scheduleId } = req.params;
@@ -80,39 +101,40 @@ const updateBookingStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    // 1️⃣ Update the schedule
-    const updatedSchedule = await WasherEmpSchedule.findByIdAndUpdate(
-      scheduleId,
-      { status },
-      { new: true }
-    );
+    const schedule = await WasherEmpSchedule.findById(scheduleId);
+    if (!schedule) return res.status(404).json({ message: "Schedule not found" });
 
-    if (!updatedSchedule) return res.status(404).json({ message: "Schedule not found" });
+    // ✅ Add status message to progress (no duplicates)
+    if (!schedule.progress.includes(status)) {
+      schedule.progress.push(status);
+    }
 
-    // 2️⃣ Update the Booking status as well
+    schedule.status = status;
+    await schedule.save();
+
+    // ✅ Update booking document as well
     const updatedBooking = await Booking.findByIdAndUpdate(
-      updatedSchedule.bookingId,
+      schedule.bookingId,
       { status },
       { new: true }
     );
 
-    res.status(200).json({ 
-      message: "Status updated for both schedule and booking", 
-      updatedSchedule, 
-      updatedBooking 
+    res.status(200).json({
+      message: "Booking & schedule status updated ✅",
+      updatedSchedule: schedule,
+      updatedBooking,
+      progress: schedule.progress, // 🆕 Return all messages
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error updating booking status:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
-// Get all schedules or schedules for a specific washer
-// Get all schedules or schedules for a specific washer
+// -------------------- GET ALL SCHEDULES --------------------
 const getAllSchedules = async (req, res) => {
   try {
-    const { washerId } = req.query; // e.g. ?washerId=66a7cfae23...
+    const { washerId } = req.query;
 
     let filter = {};
     if (washerId) {
@@ -133,10 +155,8 @@ const getAllSchedules = async (req, res) => {
       return res.status(404).json({ message: "No schedules found" });
     }
 
-    // 🧮 Calculate amount details for each booking
     const result = schedules.map((schedule) => {
       const booking = schedule.bookingId;
-
       if (!booking) return schedule;
 
       const basePrice = booking.washPackage?.price || 0;
@@ -175,9 +195,8 @@ const getAllSchedules = async (req, res) => {
   }
 };
 
-
-// Delete a schedule
- const deleteSchedule = async (req, res) => {
+// -------------------- DELETE SCHEDULE --------------------
+const deleteSchedule = async (req, res) => {
   try {
     const { scheduleId } = req.params;
 
@@ -191,9 +210,9 @@ const getAllSchedules = async (req, res) => {
 };
 
 export default {
-    acceptBooking,
-    declineBooking,
-    updateBookingStatus,
-    getAllSchedules,
-    deleteSchedule,
-}
+  acceptBooking,
+  declineBooking,
+  updateBookingStatus,
+  getAllSchedules,
+  deleteSchedule,
+};

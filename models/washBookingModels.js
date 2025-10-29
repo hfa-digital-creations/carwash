@@ -2,14 +2,17 @@ import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema(
   {
-    // 🔹 Customer reference
+    orderId: {
+      type: String,
+      unique: true,
+    },
+
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    // 🔹 Vehicle info
     vehicleType: {
       type: String,
       enum: ["Car", "Bike"],
@@ -17,7 +20,6 @@ const bookingSchema = new mongoose.Schema(
     },
     vehicleNumber: { type: String, required: true },
 
-    // 🔹 Wash Package details
     washPackage: {
       packageName: { type: String, required: true },
       price: { type: Number, required: true },
@@ -25,14 +27,12 @@ const bookingSchema = new mongoose.Schema(
       features: [String],
     },
 
-    // 🔹 Service Type
     serviceType: {
       type: String,
       enum: ["Normal", "Express"],
       default: "Normal",
     },
 
-    // 🔹 Address
     address: {
       street: String,
       maxCars: Number,
@@ -40,11 +40,10 @@ const bookingSchema = new mongoose.Schema(
       pincode: String,
       location: {
         type: { type: String, default: "Point" },
-        coordinates: [Number], // [longitude, latitude]
+        coordinates: [Number],
       },
     },
 
-    // 🔹 Booking Date & Time
     bookingDate: {
       type: Date,
       required: function () {
@@ -60,16 +59,13 @@ const bookingSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 🔹 Charges & Totals
     expressCharge: { type: Number, default: 0 },
     advanceBookingCharge: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
 
-    // 🔹 Coupon details
     discountAmount: { type: Number, default: 0 },
     couponCode: { type: String, default: null },
 
-    // 🔹 Payment details
     paymentMethod: {
       type: String,
       enum: ["Cash", "UPI", "Card"],
@@ -81,25 +77,23 @@ const bookingSchema = new mongoose.Schema(
       default: "Pending",
     },
 
-    // 🔹 Washer Details (new added)
     washerDetails: {
-  washerId: { type: mongoose.Schema.Types.ObjectId, ref: "WasherEmployee" },
-  fullName: { type: String },
-  phone: { type: String },
-  avgRating: { type: Number, default: 0 }
-},
+      washerId: { type: mongoose.Schema.Types.ObjectId, ref: "WasherEmployee" },
+      fullName: { type: String },
+      phone: { type: String },
+      avgRating: { type: Number, default: 0 },
+    },
 
-isWasherAccepted: { 
-  type: Boolean, 
-  default: false 
-}, 
-    // 🔹 Wash Progress Tracking (new added)
+    isWasherAccepted: { type: Boolean, default: false },
+
     progress: [
       {
         stage: {
           type: String,
           enum: [
             "Confirmed",
+            "Pending",
+            "Started",
             "On The Way",
             "Arrived",
             "Washing In Progress",
@@ -107,14 +101,12 @@ isWasherAccepted: {
           ],
         },
         time: String,
-        status: { type: Boolean, default: false },
+        status: { type: Boolean, default: "Pending" },
       },
     ],
 
-    // 🔹 Estimated arrival
     estimatedArrival: { type: String, default: null },
 
-    // 🔹 Booking status
     status: {
       type: String,
       enum: [
@@ -133,5 +125,33 @@ isWasherAccepted: {
   },
   { timestamps: true }
 );
+
+// ✅ Generate automatic order ID like #ORD10254
+bookingSchema.pre("save", async function (next) {
+  if (!this.orderId) {
+    try {
+      const lastBooking = await mongoose
+        .model("Booking")
+        .findOne({ orderId: { $exists: true } }) // ✅ only fetch bookings with orderId
+        .sort({ createdAt: -1 });
+
+      // ✅ Safely extract last number
+      let lastNumber = 10000; // starting point
+
+      if (lastBooking && lastBooking.orderId) {
+        const num = parseInt(lastBooking.orderId.replace("#ORD", ""));
+        if (!isNaN(num)) lastNumber = num;
+      }
+
+      this.orderId = `#ORD${lastNumber + 1}`;
+      next();
+    } catch (err) {
+      console.error("Error generating orderId:", err);
+      next(err);
+    }
+  } else {
+    next();
+  }
+});
 
 export default mongoose.model("Booking", bookingSchema);

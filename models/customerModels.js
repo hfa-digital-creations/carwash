@@ -23,12 +23,31 @@ const customerSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
-    
-    // Admin control
-    isActive: { type: Boolean, default: false } // false by default, admin can activate
+    referralCode: {
+      type: String,
+      unique: true,
+    },
+    referredBy: {
+      type: String, // or ObjectId if you want to link to another customer
+      default: null,
+    },
+    isActive: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
+// 🔥 Generate referral code before saving
+customerSchema.pre("save", function (next) {
+  if (!this.referralCode) {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    this.referralCode = code; // Example: "X8B2K9"
+  }
+  next();
+});
 
 const Customer = mongoose.model("User", customerSchema);
 export default Customer;
