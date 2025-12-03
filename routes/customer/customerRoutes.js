@@ -1,9 +1,6 @@
 import express from "express";
 import CustomerControllers from "../../controllers/customer/CustomerControllers.js";
-import { 
-  verifyAccessToken, 
-  refreshAccessToken 
-} from "../../middlewares/authMiddleware.js";
+import { verifyAccessToken, refreshAccessToken } from "../../middlewares/authMiddleware.js";
 import twilio from "twilio";
 
 const router = express.Router();

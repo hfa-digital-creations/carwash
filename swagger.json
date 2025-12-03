@@ -31,6 +31,34 @@
     {
       "name": "Partner",
       "description": "Partner registration, authentication, and management (4 roles)"
+    },
+    {
+      "name": "Booking",
+      "description": "Car/Bike wash booking management (Customer, Partner, Admin)"
+    },
+    {
+      "name": "Shopping",
+      "description": "Product order management (Customer, Seller, Delivery, Admin)"
+    },
+    {
+      "name": "Service",
+      "description": "Repair service booking management (Customer, Technician, Admin)"
+    },
+    {
+      "name": "Partner Features",
+      "description": "Partner-specific features for all 4 roles"
+    },
+    {
+      "name": "Voucher",
+      "description": "Voucher and coupon management"
+    },
+    {
+      "name": "Review",
+      "description": "Rating and review management"
+    },
+    {
+      "name": "Notification",
+      "description": "Push notification management"
     }
   ],
   "paths": {
@@ -1573,6 +1601,2921 @@
           },
           "401": {
             "description": "Invalid or expired refresh token"
+          }
+        }
+      }
+    },
+    "/booking/create": {
+      "post": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Create new booking (Customer)",
+        "description": "Customer creates a car/bike wash booking. Status will be 'Pending' waiting for admin approval.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customerId",
+                  "serviceType",
+                  "vehicleType",
+                  "package",
+                  "address",
+                  "scheduledDate",
+                  "scheduledTime",
+                  "paymentMethod",
+                  "subtotal",
+                  "total"
+                ],
+                "properties": {
+                  "customerId": {
+                    "type": "string",
+                    "example": "64abc123def456..."
+                  },
+                  "serviceType": {
+                    "type": "string",
+                    "enum": [
+                      "Car Wash",
+                      "Bike Wash"
+                    ],
+                    "example": "Car Wash"
+                  },
+                  "vehicleType": {
+                    "type": "string",
+                    "enum": [
+                      "Car",
+                      "Bike"
+                    ],
+                    "example": "Car"
+                  },
+                  "vehicleModel": {
+                    "type": "string",
+                    "example": "Honda City"
+                  },
+                  "vehicleNumber": {
+                    "type": "string",
+                    "example": "TN01AB1234"
+                  },
+                  "package": {
+                    "type": "object",
+                    "properties": {
+                      "packageType": {
+                        "type": "string",
+                        "example": "Premium Wash"
+                      },
+                      "services": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "Complete washing",
+                          "Dashboard cleaning",
+                          "Tire dressing"
+                        ]
+                      },
+                      "price": {
+                        "type": "number",
+                        "example": 500
+                      },
+                      "expressEnabled": {
+                        "type": "boolean",
+                        "example": true
+                      }
+                    }
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "street": {
+                        "type": "string",
+                        "example": "123 Main Street"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "example": "Apt 5B"
+                      },
+                      "city": {
+                        "type": "string",
+                        "example": "Chennai"
+                      },
+                      "pincode": {
+                        "type": "string",
+                        "example": "600001"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "Point"
+                            ],
+                            "example": "Point"
+                          },
+                          "coordinates": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "example": [
+                              80.2707,
+                              13.0827
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "scheduledDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-06-15"
+                  },
+                  "scheduledTime": {
+                    "type": "string",
+                    "example": "10:00 AM"
+                  },
+                  "timeSlot": {
+                    "type": "string",
+                    "enum": [
+                      "Morning",
+                      "Afternoon",
+                      "Evening"
+                    ],
+                    "example": "Morning"
+                  },
+                  "paymentMethod": {
+                    "type": "string",
+                    "enum": [
+                      "UPI",
+                      "Debit Card",
+                      "Credit Card",
+                      "Net Banking",
+                      "Wallet Balance"
+                    ],
+                    "example": "UPI"
+                  },
+                  "subtotal": {
+                    "type": "number",
+                    "example": 500
+                  },
+                  "expressFee": {
+                    "type": "number",
+                    "example": 50
+                  },
+                  "discount": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "couponCode": {
+                    "type": "string",
+                    "example": "SAVE20"
+                  },
+                  "total": {
+                    "type": "number",
+                    "example": 550
+                  },
+                  "advancePayment": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "specialInstructions": {
+                    "type": "string",
+                    "example": "Please call before arriving"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created successfully (Pending admin approval)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "booking": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/booking/my-bookings": {
+      "get": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Get customer's bookings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookings fetched successfully"
+          }
+        }
+      }
+    },
+    "/booking/{id}": {
+      "get": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Get booking by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        }
+      }
+    },
+    "/booking/{id}/cancel": {
+      "put": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Cancel booking (Customer)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancellationReason": {
+                    "type": "string",
+                    "example": "Changed plans"
+                  },
+                  "cancelledBy": {
+                    "type": "string",
+                    "enum": [
+                      "Customer",
+                      "Partner",
+                      "Admin"
+                    ],
+                    "example": "Customer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking cancelled"
+          }
+        }
+      }
+    },
+    "/booking/partner/scheduled": {
+      "get": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Get partner's scheduled jobs",
+        "description": "Get all active bookings assigned to the partner (Washing Personnel or Delivery Person)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scheduled jobs fetched"
+          }
+        }
+      }
+    },
+    "/booking/{id}/accept": {
+      "put": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Accept booking (Partner)",
+        "description": "Partner accepts the booking assigned by admin",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking accepted"
+          }
+        }
+      }
+    },
+    "/booking/{id}/decline": {
+      "put": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Decline booking (Partner)",
+        "description": "Partner declines the booking. Admin will need to assign another partner.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Vehicle breakdown"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking declined"
+          }
+        }
+      }
+    },
+    "/booking/{id}/update-status": {
+      "put": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Update booking status (Partner)",
+        "description": "Partner updates status: On The Way → Arrived → In Progress → Completed",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Washer On The Way",
+                      "Washer Arrived",
+                      "Washing in Progress",
+                      "Completed"
+                    ],
+                    "example": "Washer On The Way"
+                  },
+                  "estimatedArrival": {
+                    "type": "string",
+                    "example": "10 minutes"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully"
+          }
+        }
+      }
+    },
+    "/booking/admin/pending": {
+      "get": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Get pending bookings (Admin)",
+        "description": "Get all bookings waiting for admin approval",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending bookings fetched"
+          }
+        }
+      }
+    },
+    "/booking/admin/{id}/approve": {
+      "put": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Approve booking (Admin)",
+        "description": "Admin approves the booking. Status changes from 'Pending' to 'Confirmed'.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking approved"
+          }
+        }
+      }
+    },
+    "/booking/admin/assign-partner": {
+      "post": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Manually assign partner (Admin)",
+        "description": "Admin manually assigns a Washing Personnel or Delivery Person to the booking",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "bookingId",
+                  "partnerId"
+                ],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "example": "64abc123..."
+                  },
+                  "partnerId": {
+                    "type": "string",
+                    "example": "64def456..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Partner assigned successfully"
+          }
+        }
+      }
+    },
+    "/booking/admin/all": {
+      "get": {
+        "tags": [
+          "Booking"
+        ],
+        "summary": "Get all bookings (Admin)",
+        "description": "Admin views all bookings with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Pending",
+                "Confirmed",
+                "Partner Accepted",
+                "Partner Declined",
+                "Washer On The Way",
+                "Washer Arrived",
+                "Washing in Progress",
+                "Completed",
+                "Cancelled"
+              ]
+            },
+            "description": "Filter by booking status"
+          },
+          {
+            "name": "serviceType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Car Wash",
+                "Bike Wash"
+              ]
+            },
+            "description": "Filter by service type"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All bookings fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "bookings": {
+                      "type": "array"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    },
+                    "currentPage": {
+                      "type": "number"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/order/create": {
+      "post": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Create product order (Customer)",
+        "description": "Customer creates a shopping order. Status will be 'Pending' waiting for seller confirmation.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customerId",
+                  "items",
+                  "shippingAddress",
+                  "paymentMethod",
+                  "subtotal",
+                  "total"
+                ],
+                "properties": {
+                  "customerId": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string"
+                        },
+                        "sellerId": {
+                          "type": "string"
+                        },
+                        "productImage": {
+                          "type": "string"
+                        },
+                        "productTitle": {
+                          "type": "string",
+                          "example": "Car Shampoo"
+                        },
+                        "productDescription": {
+                          "type": "string"
+                        },
+                        "unitPrice": {
+                          "type": "number",
+                          "example": 299
+                        },
+                        "quantity": {
+                          "type": "number",
+                          "example": 2
+                        }
+                      }
+                    }
+                  },
+                  "shippingAddress": {
+                    "type": "object",
+                    "properties": {
+                      "street": {
+                        "type": "string"
+                      },
+                      "unit": {
+                        "type": "string"
+                      },
+                      "city": {
+                        "type": "string"
+                      },
+                      "pincode": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "paymentMethod": {
+                    "type": "string"
+                  },
+                  "subtotal": {
+                    "type": "number",
+                    "example": 598
+                  },
+                  "shippingCharges": {
+                    "type": "number",
+                    "example": 50
+                  },
+                  "discount": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "couponCode": {
+                    "type": "string"
+                  },
+                  "total": {
+                    "type": "number",
+                    "example": 648
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully"
+          }
+        }
+      }
+    },
+    "/order/my-orders": {
+      "get": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Get customer's orders",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orders fetched"
+          }
+        }
+      }
+    },
+    "/order/{id}": {
+      "get": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Get order by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details"
+          }
+        }
+      }
+    },
+    "/order/{id}/cancel": {
+      "put": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Cancel order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancellationReason": {
+                    "type": "string"
+                  },
+                  "cancelledBy": {
+                    "type": "string",
+                    "enum": [
+                      "Customer",
+                      "Seller",
+                      "Admin"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order cancelled"
+          }
+        }
+      }
+    },
+    "/order/seller/orders": {
+      "get": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Get seller's orders (Product Seller)",
+        "description": "Product Seller views all orders containing their products",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seller orders fetched"
+          }
+        }
+      }
+    },
+    "/order/{id}/confirm": {
+      "put": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Confirm order (Seller)",
+        "description": "Product Seller confirms the order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order confirmed"
+          }
+        }
+      }
+    },
+    "/order/{id}/update-status": {
+      "put": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Update order status (Seller/Admin)",
+        "description": "Update order status: Processing → Shipped → Out for Delivery → Delivered",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Processing",
+                      "Shipped",
+                      "Out for Delivery",
+                      "Delivered"
+                    ],
+                    "example": "Processing"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated"
+          }
+        }
+      }
+    },
+    "/order/delivery/orders": {
+      "get": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Get delivery orders (Delivery Person)",
+        "description": "Delivery Person views assigned delivery orders",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delivery orders fetched"
+          }
+        }
+      }
+    },
+    "/order/{id}/accept-delivery": {
+      "put": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Accept delivery (Delivery Person)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delivery accepted"
+          }
+        }
+      }
+    },
+    "/order/{id}/decline-delivery": {
+      "put": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Decline delivery (Delivery Person)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery declined"
+          }
+        }
+      }
+    },
+    "/order/admin/all": {
+      "get": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Get all orders (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All orders fetched"
+          }
+        }
+      }
+    },
+    "/order/admin/assign-delivery": {
+      "post": {
+        "tags": [
+          "Shopping"
+        ],
+        "summary": "Assign delivery partner (Admin)",
+        "description": "Admin manually assigns a Delivery Person to the order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "orderId",
+                  "deliveryPartnerId"
+                ],
+                "properties": {
+                  "orderId": {
+                    "type": "string"
+                  },
+                  "deliveryPartnerId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery partner assigned"
+          }
+        }
+      }
+    },
+    "/service/request": {
+      "post": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Request repair service (Customer)",
+        "description": "Customer requests a repair service from a technician",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customerId",
+                  "service",
+                  "technicianId",
+                  "isAtShop",
+                  "scheduledDate",
+                  "scheduledTime",
+                  "paymentMethod"
+                ],
+                "properties": {
+                  "customerId": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "object",
+                    "properties": {
+                      "serviceImage": {
+                        "type": "string"
+                      },
+                      "serviceName": {
+                        "type": "string",
+                        "example": "AC Repair"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "estimatedPrice": {
+                        "type": "number",
+                        "example": 1500
+                      }
+                    }
+                  },
+                  "technicianId": {
+                    "type": "string",
+                    "description": "Selected technician ID"
+                  },
+                  "isAtShop": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "true = at shop, false = at customer location"
+                  },
+                  "shopName": {
+                    "type": "string"
+                  },
+                  "shopAddress": {
+                    "type": "string"
+                  },
+                  "shopLocation": {
+                    "type": "object"
+                  },
+                  "serviceAddress": {
+                    "type": "object"
+                  },
+                  "scheduledDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "scheduledTime": {
+                    "type": "string",
+                    "example": "2:00 PM"
+                  },
+                  "timeSlot": {
+                    "type": "string"
+                  },
+                  "paymentMethod": {
+                    "type": "string",
+                    "enum": [
+                      "UPI",
+                      "Cash",
+                      "Card"
+                    ]
+                  },
+                  "estimatedTotal": {
+                    "type": "number"
+                  },
+                  "advancePayment": {
+                    "type": "number"
+                  },
+                  "customerNotes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service request sent"
+          }
+        }
+      }
+    },
+    "/service/my-requests": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get customer's service requests",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service requests fetched"
+          }
+        }
+      }
+    },
+    "/service/{id}": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get service by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service details"
+          }
+        }
+      }
+    },
+    "/service/{id}/cancel": {
+      "put": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Cancel service",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancellationReason": {
+                    "type": "string"
+                  },
+                  "cancelledBy": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service cancelled"
+          }
+        }
+      }
+    },
+    "/service/technician/requests": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get technician's service requests",
+        "description": "Repair Technician views all assigned service requests",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service requests fetched"
+          }
+        }
+      }
+    },
+    "/service/{id}/accept": {
+      "put": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Accept service request (Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "technicianNotes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service accepted"
+          }
+        }
+      }
+    },
+    "/service/{id}/decline": {
+      "put": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Decline service request (Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service declined"
+          }
+        }
+      }
+    },
+    "/service/{id}/update-status": {
+      "put": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Update service status (Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Service Ongoing",
+                      "Service Completed"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated"
+          }
+        }
+      }
+    },
+    "/service/{id}/complete": {
+      "post": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Complete service with photos and final price (Technician)",
+        "description": "Technician completes the service with before/after photos and actual total amount",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "actualTotal"
+                ],
+                "properties": {
+                  "actualTotal": {
+                    "type": "number",
+                    "example": 2000,
+                    "description": "Final price after inspection"
+                  },
+                  "beforePhotos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "url1",
+                      "url2"
+                    ]
+                  },
+                  "afterPhotos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "url3",
+                      "url4"
+                    ]
+                  },
+                  "technicianNotes": {
+                    "type": "string",
+                    "example": "Replaced AC compressor"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service completed. Transaction created."
+          }
+        }
+      }
+    },
+    "/service/admin/pending": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get pending service requests (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending requests fetched"
+          }
+        }
+      }
+    },
+    "/service/admin/assign-technician": {
+      "post": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Assign/reassign technician (Admin)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "requestId",
+                  "technicianId"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "technicianId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Technician assigned"
+          }
+        }
+      }
+    },
+    "/service/admin/all": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get all service requests (Admin)",
+        "description": "Admin views all service requests with optional filters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Request Placed",
+                "Technician Assigned",
+                "Service Accepted",
+                "Technician Declined",
+                "Service Ongoing",
+                "Service Completed",
+                "Cancelled"
+              ]
+            },
+            "description": "Filter by service status"
+          },
+          {
+            "name": "isAtShop",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filter by service location (true = at shop, false = at customer)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All service requests fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "serviceRequests": {
+                      "type": "array"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    },
+                    "currentPage": {
+                      "type": "number"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partner-features/profile": {
+      "get": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Get partner profile (All Partners)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile fetched"
+          }
+        }
+      }
+    },
+    "/partner-features/profile/update": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Update partner profile (All Partners)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phoneNumber": {
+                    "type": "string"
+                  },
+                  "profilePhoto": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "object"
+                  },
+                  "emergencyContact": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated"
+          }
+        }
+      }
+    },
+    "/partner-features/payout/update": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Update payout details (All Partners)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountHolderName": {
+                    "type": "string"
+                  },
+                  "accountNumber": {
+                    "type": "string"
+                  },
+                  "ifscCode": {
+                    "type": "string"
+                  },
+                  "idProof": {
+                    "type": "string"
+                  },
+                  "termsAccepted": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payout details updated"
+          }
+        }
+      }
+    },
+    "/partner-features/vehicle/update": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Update vehicle details (Washing Personnel / Delivery Person)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicleType": {
+                    "type": "string",
+                    "example": "Bike"
+                  },
+                  "vehicleModel": {
+                    "type": "string",
+                    "example": "Honda Activa"
+                  },
+                  "licensePlate": {
+                    "type": "string",
+                    "example": "TN01AB1234"
+                  },
+                  "registrationCertificate": {
+                    "type": "string"
+                  },
+                  "drivingLicense": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vehicle details updated"
+          }
+        }
+      }
+    },
+    "/partner-features/availability": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Toggle availability (Washing Personnel / Delivery Person)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "isAvailable"
+                ],
+                "properties": {
+                  "isAvailable": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Availability updated"
+          }
+        }
+      }
+    },
+    "/partner-features/services": {
+      "get": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Get my services (Repair Service Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Services fetched"
+          }
+        }
+      }
+    },
+    "/partner-features/services/add": {
+      "post": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Add new service (Repair Service Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "serviceName",
+                  "minPrice",
+                  "maxPrice"
+                ],
+                "properties": {
+                  "serviceImage": {
+                    "type": "string"
+                  },
+                  "serviceName": {
+                    "type": "string",
+                    "example": "AC Repair"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Complete AC repair and maintenance"
+                  },
+                  "minPrice": {
+                    "type": "number",
+                    "example": 500
+                  },
+                  "maxPrice": {
+                    "type": "number",
+                    "example": 2000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service added"
+          }
+        }
+      }
+    },
+    "/partner-features/services/{serviceId}/update": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Update service (Repair Service Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serviceImage": {
+                    "type": "string"
+                  },
+                  "serviceName": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "minPrice": {
+                    "type": "number"
+                  },
+                  "maxPrice": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service updated"
+          }
+        }
+      }
+    },
+    "/partner-features/services/{serviceId}/delete": {
+      "delete": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Delete service (Repair Service Technician)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service deleted"
+          }
+        }
+      }
+    },
+    "/partner-features/shop/update": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Update shop details (Repair Technician / Product Seller)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "shopName": {
+                    "type": "string"
+                  },
+                  "shopType": {
+                    "type": "string"
+                  },
+                  "shopAddress": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "object"
+                  },
+                  "shopImages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shop details updated"
+          }
+        }
+      }
+    },
+    "/partner-features/products": {
+      "get": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Get my products (Product Seller)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products fetched"
+          }
+        }
+      }
+    },
+    "/partner-features/products/add": {
+      "post": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Add new product (Product Seller)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "productTitle",
+                  "unitPrice",
+                  "stockQuantity"
+                ],
+                "properties": {
+                  "productImage": {
+                    "type": "string"
+                  },
+                  "productTitle": {
+                    "type": "string",
+                    "example": "Car Shampoo 500ml"
+                  },
+                  "productDescription": {
+                    "type": "string"
+                  },
+                  "unitPrice": {
+                    "type": "number",
+                    "example": 299
+                  },
+                  "stockQuantity": {
+                    "type": "number",
+                    "example": 50
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product added"
+          }
+        }
+      }
+    },
+    "/partner-features/products/{productId}/update": {
+      "put": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Update product (Product Seller)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productImage": {
+                    "type": "string"
+                  },
+                  "productTitle": {
+                    "type": "string"
+                  },
+                  "productDescription": {
+                    "type": "string"
+                  },
+                  "unitPrice": {
+                    "type": "number"
+                  },
+                  "stockQuantity": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated"
+          }
+        }
+      }
+    },
+    "/partner-features/products/{productId}/delete": {
+      "delete": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Delete product (Product Seller)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product deleted"
+          }
+        }
+      }
+    },
+    "/partner-features/earnings/summary": {
+      "get": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Get earnings summary (All Partners)",
+        "description": "Get partner's earnings summary with this week, this month, and total earnings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Earnings summary fetched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "currentBalance": {
+                      "type": "number"
+                    },
+                    "thisWeek": {
+                      "type": "object",
+                      "properties": {
+                        "earnings": {
+                          "type": "number"
+                        },
+                        "bookings": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "thisMonth": {
+                      "type": "object",
+                      "properties": {
+                        "earnings": {
+                          "type": "number"
+                        },
+                        "bookings": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "totalEarnings": {
+                      "type": "number"
+                    },
+                    "totalBookings": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partner-features/earnings/transactions": {
+      "get": {
+        "tags": [
+          "Partner Features"
+        ],
+        "summary": "Get transaction history (All Partners)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transactionType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Earning",
+                "Payout",
+                "Deduction",
+                "Refund"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction history fetched"
+          }
+        }
+      }
+    },
+    "/voucher/apply": {
+      "post": {
+        "tags": [
+          "Voucher"
+        ],
+        "summary": "Apply voucher (Customer)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "voucherCode",
+                  "userId",
+                  "orderType",
+                  "orderAmount"
+                ],
+                "properties": {
+                  "voucherCode": {
+                    "type": "string",
+                    "example": "SAVE20"
+                  },
+                  "userId": {
+                    "type": "string"
+                  },
+                  "orderType": {
+                    "type": "string",
+                    "enum": [
+                      "Car Wash",
+                      "Bike Wash",
+                      "Shopping",
+                      "Repair Services"
+                    ],
+                    "example": "Car Wash"
+                  },
+                  "orderAmount": {
+                    "type": "number",
+                    "example": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Voucher applied successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "discountAmount": {
+                      "type": "number"
+                    },
+                    "finalAmount": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Voucher invalid or expired"
+          }
+        }
+      }
+    },
+    "/voucher/available": {
+      "get": {
+        "tags": [
+          "Voucher"
+        ],
+        "summary": "Get available vouchers (Customer)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by order type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available vouchers fetched"
+          }
+        }
+      }
+    },
+    "/voucher/usage/{userId}": {
+      "get": {
+        "tags": [
+          "Voucher"
+        ],
+        "summary": "Get voucher usage history (Customer)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage history fetched"
+          }
+        }
+      }
+    },
+    "/review/create": {
+      "post": {
+        "tags": [
+          "Review"
+        ],
+        "summary": "Create review (Customer)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customerId",
+                  "partnerId",
+                  "orderId",
+                  "orderType",
+                  "rating"
+                ],
+                "properties": {
+                  "customerId": {
+                    "type": "string"
+                  },
+                  "partnerId": {
+                    "type": "string"
+                  },
+                  "orderId": {
+                    "type": "string",
+                    "description": "Booking ID, Order ID, or Service Request ID"
+                  },
+                  "orderType": {
+                    "type": "string",
+                    "enum": [
+                      "Booking",
+                      "ProductOrder",
+                      "ServiceBooking"
+                    ],
+                    "example": "Booking"
+                  },
+                  "rating": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5
+                  },
+                  "reviewText": {
+                    "type": "string",
+                    "example": "Excellent service! Very professional."
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Review image URLs"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created. Partner's rating updated."
+          },
+          "400": {
+            "description": "Duplicate review"
+          }
+        }
+      }
+    },
+    "/review/my-reviews/{customerId}": {
+      "get": {
+        "tags": [
+          "Review"
+        ],
+        "summary": "Get my reviews (Customer)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviews fetched"
+          }
+        }
+      }
+    },
+    "/review/{id}/respond": {
+      "post": {
+        "tags": [
+          "Review"
+        ],
+        "summary": "Respond to review (Partner)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "responseText"
+                ],
+                "properties": {
+                  "responseText": {
+                    "type": "string",
+                    "example": "Thank you for your feedback!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response added"
+          }
+        }
+      }
+    },
+    "/review/partner/{partnerId}": {
+      "get": {
+        "tags": [
+          "Review"
+        ],
+        "summary": "Get partner's reviews (Public)",
+        "description": "Get all visible reviews for a partner with rating breakdown",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviews fetched with rating breakdown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": {
+                      "type": "array"
+                    },
+                    "totalCount": {
+                      "type": "number"
+                    },
+                    "ratingBreakdown": {
+                      "type": "object",
+                      "properties": {
+                        "1": {
+                          "type": "number"
+                        },
+                        "2": {
+                          "type": "number"
+                        },
+                        "3": {
+                          "type": "number"
+                        },
+                        "4": {
+                          "type": "number"
+                        },
+                        "5": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notification/customer/{userId}": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Get customer notifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isRead",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filter by read/unread"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications fetched",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notifications": {
+                      "type": "array"
+                    },
+                    "unreadCount": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notification/partner/{userId}": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Get partner notifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications fetched"
+          }
+        }
+      }
+    },
+    "/notification/{id}/read": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Mark notification as read",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read"
+          }
+        }
+      }
+    },
+    "/notification/read-all": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Mark all notifications as read",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId",
+                  "userType"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
+                  "userType": {
+                    "type": "string",
+                    "enum": [
+                      "Customer",
+                      "Partner"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All notifications marked as read"
           }
         }
       }
