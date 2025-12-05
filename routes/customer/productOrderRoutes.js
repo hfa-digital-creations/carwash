@@ -2,7 +2,7 @@ import express from "express";
 import ProductOrderController from "../../controllers/customer/productOrderControllers.js";
 import { verifyAccessToken } from "../../middlewares/authMiddleware.js"; // Customer
 import { verifyAccessToken as verifyPartnerToken, checkRole } from "../../middlewares/partnerAuthMiddleware.js"; // Partner
-import { verifyAdminAccessToken } from "../../middlewares/adminMiddleware.js"; // Admin
+import { verifyAdminAccessToken, superAdminOnly } from "../../middlewares/adminMiddleware.js"; // Admin
 
 const router = express.Router();
 
@@ -75,13 +75,13 @@ router.put(
 // ==================== ADMIN ROUTES ====================
 
 // Get all orders (Admin only)
-router.get("/admin/all", verifyAdminAccessToken, ProductOrderController.getAllOrders);
+router.get("/admin/all", verifyAdminAccessToken, superAdminOnly, ProductOrderController.getAllOrders);
 
 // Manually assign delivery partner (Admin only)
-router.post("/admin/assign-delivery", verifyAdminAccessToken, ProductOrderController.assignDeliveryPartner);
+router.post("/admin/assign-delivery", verifyAdminAccessToken, superAdminOnly, ProductOrderController.assignDeliveryPartner);
 
 // Update order status (Admin can update any status)
-router.put("/admin/:id/update-status", verifyAdminAccessToken, ProductOrderController.updateOrderStatus);
+router.put("/admin/:id/update-status", verifyAdminAccessToken, superAdminOnly, ProductOrderController.updateOrderStatus);
 
 // ==================== NOTES ====================
 /*

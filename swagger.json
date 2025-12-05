@@ -151,7 +151,7 @@
           "Customer"
         ],
         "summary": "Step 2: Verify OTP and create account",
-        "description": "Verifies OTP and creates customer account with tokens",
+        "description": "Verifies OTP and creates customer account. Returns accessToken and refreshToken (NO customToken)",
         "requestBody": {
           "required": true,
           "content": {
@@ -182,7 +182,48 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CustomerAuthResponse"
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User registered successfully ✅"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "692fe5d13778bddc8364a45d"
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "example": "John Doe"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "john@example.com"
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "example": "+917397695334"
+                        },
+                        "referralCode": {
+                          "type": "string",
+                          "example": "JOHN123"
+                        }
+                      }
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "description": "JWT access token",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "description": "JWT refresh token",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
                 }
               }
             }
@@ -199,6 +240,7 @@
           "Customer"
         ],
         "summary": "Customer login",
+        "description": "Login with email or phone. Returns accessToken and refreshToken (NO customToken)",
         "requestBody": {
           "required": true,
           "content": {
@@ -229,7 +271,46 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CustomerAuthResponse"
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Login successful ✅"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "692fe5d13778bddc8364a45d"
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "example": "John Doe"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "john@example.com"
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "example": "+917397695334"
+                        },
+                        "referralCode": {
+                          "type": "string",
+                          "example": "JOHN123"
+                        }
+                      }
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
                 }
               }
             }
@@ -384,10 +465,12 @@
                   "type": "object",
                   "properties": {
                     "message": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Users fetched successfully ✅"
                     },
                     "count": {
-                      "type": "integer"
+                      "type": "integer",
+                      "example": 10
                     },
                     "users": {
                       "type": "array",
@@ -423,13 +506,26 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "692fe5d13778bddc8364a45d"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "User fetched successfully"
+            "description": "User fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/Customer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "User not found"
@@ -454,7 +550,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "692fe5d13778bddc8364a45d"
             }
           }
         ],
@@ -466,22 +563,51 @@
                 "type": "object",
                 "properties": {
                   "fullName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe Updated"
                   },
                   "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john.updated@example.com"
                   },
                   "phoneNumber": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+917397695334"
                   },
                   "street": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123 Main Street"
                   },
                   "city": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Chennai"
                   },
                   "pincode": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "600001"
+                  },
+                  "maxCars": {
+                    "type": "number",
+                    "example": 2
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "example": "Point"
+                      },
+                      "coordinates": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "example": [
+                          80.2707,
+                          13.0827
+                        ]
+                      }
+                    }
                   }
                 }
               }
@@ -490,7 +616,29 @@
         },
         "responses": {
           "200": {
-            "description": "Profile updated successfully"
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Profile updated successfully ✅"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/Customer"
+                    },
+                    "address": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
           }
         }
       }
@@ -512,13 +660,27 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "692fe5d13778bddc8364a45d"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "User deleted successfully"
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User deleted successfully ✅"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "User not found"
@@ -668,52 +830,7 @@
         }
       }
     },
-    "/admin/change-password": {
-      "put": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "Change admin password",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "currentPassword",
-                  "newPassword"
-                ],
-                "properties": {
-                  "currentPassword": {
-                    "type": "string",
-                    "example": "oldpass123"
-                  },
-                  "newPassword": {
-                    "type": "string",
-                    "minLength": 6,
-                    "example": "newpass123"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Password changed successfully"
-          },
-          "400": {
-            "description": "Current password incorrect"
-          }
-        }
-      }
-    },
+   
     "/admin/getAllAdmins": {
       "get": {
         "tags": [
@@ -787,6 +904,238 @@
         }
       }
     },
+    "/admin/refresh-token": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully"
+          }
+        }
+      }
+    },
+    "/admin/request-password-reset": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Step 1: Request password reset OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully"
+          },
+          "403": {
+            "description": "Account is deactivated"
+          },
+          "404": {
+            "description": "Admin not found"
+          }
+        }
+      }
+    },
+    "/admin/verify-otp": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Step 2: Verify OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@example.com"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired OTP"
+          }
+        }
+      }
+    },
+    "/admin/reset-password": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Step 3: Reset password with OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp",
+                  "newPassword"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@example.com"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "newpass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully"
+          },
+          "400": {
+            "description": "Invalid OTP or password too short"
+          }
+        }
+      }
+    },
+    "/admin/resend-otp": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Resend OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New OTP sent successfully"
+          },
+          "404": {
+            "description": "Admin not found"
+          }
+        }
+      }
+    },
+    "/admin/logout": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Logout admin",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/admin/profile": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get admin profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile fetched successfully"
+          }
+        }
+      }
+    },
+
     "/partner/register": {
       "post": {
         "tags": [
@@ -839,7 +1188,7 @@
                       "Repair Service Technician",
                       "Product Seller"
                     ],
-                    "example": "Washing Personnel"
+                    "example": "Product Seller"
                   },
                   "dateOfBirth": {
                     "type": "string",
@@ -897,7 +1246,7 @@
           "Partner"
         ],
         "summary": "Step 2: Verify OTP and create partner account",
-        "description": "Verifies OTP and creates partner account with basic info. Returns tokens to complete profile.",
+        "description": "Verifies OTP and creates partner account with basic info. Returns accessToken and refreshToken (NO customToken) to complete profile.",
         "requestBody": {
           "required": true,
           "content": {
@@ -935,18 +1284,51 @@
                       "example": "Registration successful! ✅ Please complete your profile."
                     },
                     "partner": {
-                      "$ref": "#/components/schemas/Partner"
-                    },
-                    "customToken": {
-                      "type": "string",
-                      "description": "Firebase custom token"
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "692ff8696496b01c810ffd89"
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "example": "Alex Thompson"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "alex@example.com"
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "example": "+917397695334"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "Product Seller"
+                        },
+                        "referralCode": {
+                          "type": "string",
+                          "example": "ALEX123"
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": false,
+                          "description": "Pending admin approval"
+                        },
+                        "profileComplete": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
                     },
                     "accessToken": {
                       "type": "string",
-                      "description": "Use this token in Authorization header for completeProfile"
+                      "description": "Use this token in Authorization header for completeProfile",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                     },
                     "refreshToken": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                     },
                     "nextStep": {
                       "type": "string",
@@ -969,7 +1351,7 @@
           "Partner"
         ],
         "summary": "Step 3: Complete partner profile",
-        "description": "Complete profile after registration. Requires authentication token from Step 2.",
+        "description": "Complete profile after registration. Response includes productId/sellerId for Product Sellers and serviceId/technicianId for Repair Technicians. Requires authentication token from Step 2.",
         "security": [
           {
             "bearerAuth": []
@@ -983,7 +1365,7 @@
             "description": "Partner ID from registration response",
             "schema": {
               "type": "string",
-              "example": "507f1f77bcf86cd799439011"
+              "example": "692ff8696496b01c810ffd89"
             }
           }
         ],
@@ -993,6 +1375,162 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PartnerProfileUpdate"
+              },
+              "examples": {
+                "productSeller": {
+                  "summary": "Product Seller Profile",
+                  "value": {
+                    "address": {
+                      "street": "56, NSC Bose Road",
+                      "city": "Chennai",
+                      "state": "Tamil Nadu",
+                      "postalCode": "600079",
+                      "country": "India",
+                      "location": {
+                        "coordinates": [
+                          80.2707,
+                          13.0827
+                        ]
+                      }
+                    },
+                    "shopDetails": {
+                      "shopName": "Anand Auto Parts",
+                      "shopType": "Auto Parts Store",
+                      "shopAddress": "56, NSC Bose Road, Chennai",
+                      "location": {
+                        "coordinates": [
+                          80.2707,
+                          13.0827
+                        ]
+                      },
+                      "shopImages": [
+                        "shop1.jpg",
+                        "shop2.jpg"
+                      ]
+                    },
+                    "products": [
+                      {
+                        "productImage": "engine_oil.jpg",
+                        "productTitle": "Castrol GTX Engine Oil 5W-30",
+                        "productDescription": "High-performance synthetic engine oil",
+                        "unitPrice": 2499,
+                        "stockQuantity": 50
+                      },
+                      {
+                        "productImage": "brake_pads.jpg",
+                        "productTitle": "Bosch Brake Pads",
+                        "productDescription": "Premium brake pads for all vehicles",
+                        "unitPrice": 1899,
+                        "stockQuantity": 30
+                      }
+                    ],
+                    "payoutDetails": {
+                      "accountHolderName": "Anand Kumar",
+                      "accountNumber": "123456789012",
+                      "ifscCode": "SBIN0001234",
+                      "idProof": "aadhar.jpg",
+                      "termsAccepted": true
+                    }
+                  }
+                },
+                "repairTechnician": {
+                  "summary": "Repair Technician Profile",
+                  "value": {
+                    "address": {
+                      "street": "12, Anna Salai",
+                      "city": "Chennai",
+                      "state": "Tamil Nadu",
+                      "postalCode": "600002",
+                      "country": "India",
+                      "location": {
+                        "coordinates": [
+                          80.2707,
+                          13.0827
+                        ]
+                      }
+                    },
+                    "shopDetails": {
+                      "shopName": "Kumar Auto Repairs",
+                      "shopType": "Auto Repair Shop",
+                      "shopAddress": "12, Anna Salai, Chennai",
+                      "location": {
+                        "coordinates": [
+                          80.2707,
+                          13.0827
+                        ]
+                      },
+                      "shopImages": [
+                        "shop1.jpg"
+                      ]
+                    },
+                    "services": [
+                      {
+                        "serviceImage": "engine_repair.jpg",
+                        "serviceName": "Engine Repair",
+                        "description": "Complete engine overhaul and repair",
+                        "minPrice": 5000,
+                        "maxPrice": 50000
+                      },
+                      {
+                        "serviceImage": "brake_service.jpg",
+                        "serviceName": "Brake Service",
+                        "description": "Brake pad replacement and fluid change",
+                        "minPrice": 2000,
+                        "maxPrice": 10000
+                      }
+                    ],
+                    "yearsOfExperience": 10,
+                    "specializations": [
+                      "Engine Repair",
+                      "Brake Systems"
+                    ],
+                    "certifications": [
+                      "ASE Certified"
+                    ],
+                    "payoutDetails": {
+                      "accountHolderName": "Kumar Raj",
+                      "accountNumber": "987654321098",
+                      "ifscCode": "HDFC0001234",
+                      "termsAccepted": true
+                    }
+                  }
+                },
+                "washingPersonnel": {
+                  "summary": "Washing Personnel Profile",
+                  "value": {
+                    "address": {
+                      "street": "34, Mount Road",
+                      "city": "Chennai",
+                      "state": "Tamil Nadu",
+                      "postalCode": "600006",
+                      "country": "India",
+                      "location": {
+                        "coordinates": [
+                          80.2707,
+                          13.0827
+                        ]
+                      }
+                    },
+                    "serviceCategories": [
+                      "Exterior Wash",
+                      "Interior Cleaning",
+                      "Engine Bay Cleaning"
+                    ],
+                    "vehicleDetails": {
+                      "vehicleType": "Bike",
+                      "vehicleModel": "Honda Activa",
+                      "licensePlate": "TN01AB1234",
+                      "registrationCertificate": "rc.jpg",
+                      "drivingLicense": "dl.jpg"
+                    },
+                    "payoutDetails": {
+                      "accountHolderName": "Ravi Kumar",
+                      "accountNumber": "456789123456",
+                      "ifscCode": "ICIC0001234",
+                      "termsAccepted": true
+                    }
+                  }
+                }
               }
             }
           }
@@ -1003,18 +1541,118 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Profile completed successfully! ✅ Your account is pending admin approval."
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ProductSellerProfileResponse"
                     },
-                    "partner": {
-                      "$ref": "#/components/schemas/Partner"
+                    {
+                      "$ref": "#/components/schemas/RepairTechnicianProfileResponse"
                     },
-                    "note": {
-                      "type": "string",
-                      "example": "You can login after admin approval"
+                    {
+                      "$ref": "#/components/schemas/GenericProfileResponse"
+                    }
+                  ]
+                },
+                "examples": {
+                  "productSellerResponse": {
+                    "summary": "Product Seller Profile Completed",
+                    "value": {
+                      "message": "Profile completed successfully! ✅ Your account is pending admin approval.",
+                      "partner": {
+                        "id": "692ff8696496b01c810ffd89",
+                        "fullName": "Anand Kumar",
+                        "email": "anand@example.com",
+                        "phoneNumber": "+917397695334",
+                        "role": "Product Seller",
+                        "referralCode": "ANAND123",
+                        "isActive": false,
+                        "profileComplete": true
+                      },
+                      "products": [
+                        {
+                          "productId": "675d1e2f3a4b5c6789012345",
+                          "sellerId": "692ff8696496b01c810ffd89",
+                          "productImage": "engine_oil.jpg",
+                          "productTitle": "Castrol GTX Engine Oil 5W-30",
+                          "productDescription": "High-performance synthetic engine oil",
+                          "unitPrice": 2499,
+                          "stockQuantity": 50
+                        },
+                        {
+                          "productId": "675e2f3a4b5c6789012346",
+                          "sellerId": "692ff8696496b01c810ffd89",
+                          "productImage": "brake_pads.jpg",
+                          "productTitle": "Bosch Brake Pads",
+                          "productDescription": "Premium brake pads for all vehicles",
+                          "unitPrice": 1899,
+                          "stockQuantity": 30
+                        }
+                      ],
+                      "summary": {
+                        "totalProducts": 2,
+                        "sellerId": "692ff8696496b01c810ffd89",
+                        "sellerName": "Anand Kumar"
+                      },
+                      "note": "Products added successfully! You can login after admin approval."
+                    }
+                  },
+                  "repairTechnicianResponse": {
+                    "summary": "Repair Technician Profile Completed",
+                    "value": {
+                      "message": "Profile completed successfully! ✅ Your account is pending admin approval.",
+                      "partner": {
+                        "id": "693ab8796496b01c810ffd90",
+                        "fullName": "Kumar Raj",
+                        "email": "kumar@example.com",
+                        "phoneNumber": "+919876543210",
+                        "role": "Repair Service Technician",
+                        "referralCode": "KUMAR123",
+                        "isActive": false,
+                        "profileComplete": true
+                      },
+                      "services": [
+                        {
+                          "serviceId": "675f3a4b5c6789012347",
+                          "technicianId": "693ab8796496b01c810ffd90",
+                          "serviceImage": "engine_repair.jpg",
+                          "serviceName": "Engine Repair",
+                          "description": "Complete engine overhaul and repair",
+                          "minPrice": 5000,
+                          "maxPrice": 50000
+                        },
+                        {
+                          "serviceId": "675f3a4b5c6789012348",
+                          "technicianId": "693ab8796496b01c810ffd90",
+                          "serviceImage": "brake_service.jpg",
+                          "serviceName": "Brake Service",
+                          "description": "Brake pad replacement and fluid change",
+                          "minPrice": 2000,
+                          "maxPrice": 10000
+                        }
+                      ],
+                      "summary": {
+                        "totalServices": 2,
+                        "technicianId": "693ab8796496b01c810ffd90",
+                        "technicianName": "Kumar Raj"
+                      },
+                      "note": "You can login after admin approval"
+                    }
+                  },
+                  "washingPersonnelResponse": {
+                    "summary": "Washing Personnel Profile Completed",
+                    "value": {
+                      "message": "Profile completed successfully! ✅ Your account is pending admin approval.",
+                      "partner": {
+                        "id": "694bc9807496b01c810ffd91",
+                        "fullName": "Ravi Kumar",
+                        "email": "ravi@example.com",
+                        "phoneNumber": "+918765432109",
+                        "role": "Washing Personnel",
+                        "referralCode": "RAVI123",
+                        "isActive": false,
+                        "profileComplete": true
+                      },
+                      "note": "You can login after admin approval"
                     }
                   }
                 }
@@ -1036,6 +1674,7 @@
           "Partner"
         ],
         "summary": "Partner login",
+        "description": "Login with email or phone. Returns accessToken and refreshToken (NO customToken)",
         "requestBody": {
           "required": true,
           "content": {
@@ -1066,10 +1705,66 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PartnerAuthResponse"
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Login successful ✅"
+                    },
+                    "partner": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "692ff8696496b01c810ffd89"
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "example": "Anand Kumar"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "anand@example.com"
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "example": "+917397695334"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "Product Seller"
+                        },
+                        "referralCode": {
+                          "type": "string",
+                          "example": "ANAND123"
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
                 }
               }
             }
+          },
+          "400": {
+            "description": "Incorrect password"
+          },
+          "403": {
+            "description": "Account not verified or not activated by admin"
+          },
+          "404": {
+            "description": "Partner not found"
           }
         }
       }
@@ -2281,7 +2976,7 @@
           "Shopping"
         ],
         "summary": "Create product order (Customer)",
-        "description": "Customer creates a shopping order. Status will be 'Pending' waiting for seller confirmation.",
+        "description": "Customer creates a shopping order. Backend validates products, checks stock, and calculates all totals (subtotal, shipping, discount, total). Status will be 'Pending' waiting for seller confirmation.",
         "security": [
           {
             "bearerAuth": []
@@ -2297,41 +2992,37 @@
                   "customerId",
                   "items",
                   "shippingAddress",
-                  "paymentMethod",
-                  "subtotal",
-                  "total"
+                  "paymentMethod"
                 ],
                 "properties": {
                   "customerId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "692fe5d13778bddc8364a45d"
                   },
                   "items": {
                     "type": "array",
+                    "description": "Array of products to order. Backend fetches product details from database.",
                     "items": {
                       "type": "object",
+                      "required": [
+                        "productId",
+                        "sellerId",
+                        "quantity"
+                      ],
                       "properties": {
                         "productId": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Product ID from browse API",
+                          "example": "675d1e2f3a4b5c6789012345"
                         },
                         "sellerId": {
-                          "type": "string"
-                        },
-                        "productImage": {
-                          "type": "string"
-                        },
-                        "productTitle": {
                           "type": "string",
-                          "example": "Car Shampoo"
-                        },
-                        "productDescription": {
-                          "type": "string"
-                        },
-                        "unitPrice": {
-                          "type": "number",
-                          "example": 299
+                          "description": "Seller ID from browse API",
+                          "example": "692ff8696496b01c810ffd89"
                         },
                         "quantity": {
                           "type": "number",
+                          "description": "Quantity to order",
                           "example": 2
                         }
                       }
@@ -2339,42 +3030,118 @@
                   },
                   "shippingAddress": {
                     "type": "object",
+                    "required": [
+                      "street",
+                      "city",
+                      "pincode"
+                    ],
                     "properties": {
                       "street": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "123, Anna Nagar Main Road"
                       },
                       "unit": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "Flat 5B, Tower A"
                       },
                       "city": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "Chennai"
                       },
                       "pincode": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "600040"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "Point"
+                            ],
+                            "example": "Point"
+                          },
+                          "coordinates": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "example": [
+                              80.209,
+                              13.085
+                            ]
+                          }
+                        }
                       }
                     }
                   },
                   "paymentMethod": {
-                    "type": "string"
-                  },
-                  "subtotal": {
-                    "type": "number",
-                    "example": 598
-                  },
-                  "shippingCharges": {
-                    "type": "number",
-                    "example": 50
-                  },
-                  "discount": {
-                    "type": "number",
-                    "example": 0
+                    "type": "string",
+                    "enum": [
+                      "Cash",
+                      "UPI",
+                      "Card",
+                      "Wallet"
+                    ],
+                    "example": "UPI"
                   },
                   "couponCode": {
-                    "type": "string"
-                  },
-                  "total": {
-                    "type": "number",
-                    "example": 648
+                    "type": "string",
+                    "description": "Optional coupon code. Backend validates and applies discount.",
+                    "example": "SHOP500"
+                  }
+                }
+              },
+              "examples": {
+                "single_product": {
+                  "summary": "Single Product Order",
+                  "value": {
+                    "customerId": "692fe5d13778bddc8364a45d",
+                    "items": [
+                      {
+                        "productId": "675d1e2f3a4b5c6789012345",
+                        "sellerId": "692ff8696496b01c810ffd89",
+                        "quantity": 2
+                      }
+                    ],
+                    "shippingAddress": {
+                      "street": "123, Anna Nagar Main Road",
+                      "unit": "Flat 5B",
+                      "city": "Chennai",
+                      "pincode": "600040"
+                    },
+                    "paymentMethod": "UPI"
+                  }
+                },
+                "multi_seller_with_coupon": {
+                  "summary": "Multiple Products with Coupon",
+                  "value": {
+                    "customerId": "692fe5d13778bddc8364a45d",
+                    "items": [
+                      {
+                        "productId": "675d1e2f3a4b5c6789012345",
+                        "sellerId": "692ff8696496b01c810ffd89",
+                        "quantity": 2
+                      },
+                      {
+                        "productId": "675e2f3a4b5c6789012346",
+                        "sellerId": "692ff8696496b01c810ffd89",
+                        "quantity": 1
+                      },
+                      {
+                        "productId": "675f3a4b5c6789012347",
+                        "sellerId": "693ab8796496b01c810ffd90",
+                        "quantity": 3
+                      }
+                    ],
+                    "shippingAddress": {
+                      "street": "456, Mount Road",
+                      "city": "Chennai",
+                      "pincode": "600002"
+                    },
+                    "paymentMethod": "Card",
+                    "couponCode": "SHOP500"
                   }
                 }
               }
@@ -2383,7 +3150,172 @@
         },
         "responses": {
           "201": {
-            "description": "Order created successfully"
+            "description": "Order created successfully. Backend calculated all totals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Order created successfully! ✅"
+                    },
+                    "order": {
+                      "type": "object",
+                      "properties": {
+                        "orderId": {
+                          "type": "string",
+                          "example": "ORD1733319876543"
+                        },
+                        "customerId": {
+                          "type": "string"
+                        },
+                        "customerName": {
+                          "type": "string"
+                        },
+                        "customerEmail": {
+                          "type": "string"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "productId": {
+                                "type": "string"
+                              },
+                              "sellerId": {
+                                "type": "string"
+                              },
+                              "sellerName": {
+                                "type": "string",
+                                "example": "Anand Auto Parts"
+                              },
+                              "productImage": {
+                                "type": "string"
+                              },
+                              "productTitle": {
+                                "type": "string",
+                                "example": "Castrol GTX Engine Oil"
+                              },
+                              "productDescription": {
+                                "type": "string"
+                              },
+                              "unitPrice": {
+                                "type": "number",
+                                "example": 2499,
+                                "description": "Price from database"
+                              },
+                              "quantity": {
+                                "type": "number",
+                                "example": 2
+                              },
+                              "subtotal": {
+                                "type": "number",
+                                "example": 4998
+                              }
+                            }
+                          }
+                        },
+                        "shippingAddress": {
+                          "type": "object"
+                        },
+                        "orderStatus": {
+                          "type": "string",
+                          "example": "Pending"
+                        },
+                        "paymentMethod": {
+                          "type": "string",
+                          "example": "UPI"
+                        },
+                        "subtotal": {
+                          "type": "number",
+                          "example": 4998,
+                          "description": "⭐ Backend calculated"
+                        },
+                        "shippingCharges": {
+                          "type": "number",
+                          "example": 0,
+                          "description": "⭐ Backend calculated (Free if >500, else ₹50)"
+                        },
+                        "discount": {
+                          "type": "number",
+                          "example": 0,
+                          "description": "⭐ Backend calculated from coupon"
+                        },
+                        "couponCode": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "number",
+                          "example": 4998,
+                          "description": "⭐ Backend calculated final total"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "totalItems": {
+                          "type": "number",
+                          "example": 3
+                        },
+                        "uniqueSellers": {
+                          "type": "number",
+                          "example": 2
+                        },
+                        "stockUpdated": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "notificationsSent": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    },
+                    "note": {
+                      "type": "string",
+                      "example": "Order is pending seller confirmation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "missing_fields": {
+                    "summary": "Missing required fields",
+                    "value": {
+                      "message": "Required: customerId, items, shippingAddress, paymentMethod"
+                    }
+                  },
+                  "insufficient_stock": {
+                    "summary": "Stock not available",
+                    "value": {
+                      "message": "Insufficient stock for Castrol Engine Oil. Available: 10"
+                    }
+                  },
+                  "invalid_product": {
+                    "summary": "Product not found",
+                    "value": {
+                      "message": "Product not found or seller invalid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found"
           }
         }
       }
@@ -2435,6 +3367,7 @@
           "Shopping"
         ],
         "summary": "Cancel order",
+        "description": "Cancel order and restore product stock automatically",
         "security": [
           {
             "bearerAuth": []
@@ -2475,7 +3408,7 @@
         },
         "responses": {
           "200": {
-            "description": "Order cancelled"
+            "description": "Order cancelled and stock restored"
           }
         }
       }
@@ -4536,7 +5469,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "507f1f77bcf86cd799439011"
+            "example": "692fe5d13778bddc8364a45d"
           },
           "fullName": {
             "type": "string",
@@ -4552,18 +5485,21 @@
           },
           "referralCode": {
             "type": "string",
-            "example": "XYZ789"
+            "example": "JOHN123"
           },
           "referredBy": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "ABC123"
           },
           "isActive": {
-            "type": "boolean"
+            "type": "boolean",
+            "example": true
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2024-12-05T10:30:00Z"
           }
         }
       },
@@ -4575,33 +5511,37 @@
             "example": "User registered successfully ✅"
           },
           "user": {
-            "$ref": "#/components/schemas/Customer"
-          },
-          "customToken": {
-            "type": "string",
-            "description": "Firebase custom token for client app"
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "692fe5d13778bddc8364a45d"
+              },
+              "fullName": {
+                "type": "string",
+                "example": "John Doe"
+              },
+              "email": {
+                "type": "string",
+                "example": "john@example.com"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "example": "+917397695334"
+              },
+              "referralCode": {
+                "type": "string",
+                "example": "JOHN123"
+              }
+            }
           },
           "accessToken": {
             "type": "string",
-            "description": "JWT access token (1 day validity)"
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
           },
           "refreshToken": {
             "type": "string",
-            "description": "JWT refresh token (7 days validity)"
-          },
-          "tokenInfo": {
-            "type": "object",
-            "properties": {
-              "customToken": {
-                "type": "string"
-              },
-              "accessToken": {
-                "type": "string"
-              },
-              "refreshToken": {
-                "type": "string"
-              }
-            }
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
           }
         }
       },
@@ -4692,26 +5632,147 @@
           }
         }
       },
-      "PartnerAuthResponse": {
+      "ProductSellerProfileResponse": {
         "type": "object",
         "properties": {
           "message": {
-            "type": "string"
+            "type": "string",
+            "example": "Profile completed successfully! ✅ Your account is pending admin approval."
           },
           "partner": {
             "$ref": "#/components/schemas/Partner"
           },
-          "customToken": {
-            "type": "string"
+          "products": {
+            "type": "array",
+            "description": "Array of products with generated productId and sellerId",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productId": {
+                  "type": "string",
+                  "description": "Auto-generated MongoDB ObjectId",
+                  "example": "675d1e2f3a4b5c6789012345"
+                },
+                "sellerId": {
+                  "type": "string",
+                  "description": "Partner ID (same for all products)",
+                  "example": "692ff8696496b01c810ffd89"
+                },
+                "productImage": {
+                  "type": "string"
+                },
+                "productTitle": {
+                  "type": "string"
+                },
+                "productDescription": {
+                  "type": "string"
+                },
+                "unitPrice": {
+                  "type": "number"
+                },
+                "stockQuantity": {
+                  "type": "number"
+                }
+              }
+            }
           },
-          "accessToken": {
-            "type": "string"
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalProducts": {
+                "type": "integer"
+              },
+              "sellerId": {
+                "type": "string"
+              },
+              "sellerName": {
+                "type": "string"
+              }
+            }
           },
-          "refreshToken": {
-            "type": "string"
+          "note": {
+            "type": "string",
+            "example": "Products added successfully! You can login after admin approval."
+          }
+        }
+      },
+      "RepairTechnicianProfileResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Profile completed successfully! ✅ Your account is pending admin approval."
           },
-          "nextStep": {
-            "type": "string"
+          "partner": {
+            "$ref": "#/components/schemas/Partner"
+          },
+          "services": {
+            "type": "array",
+            "description": "Array of services with generated serviceId and technicianId",
+            "items": {
+              "type": "object",
+              "properties": {
+                "serviceId": {
+                  "type": "string",
+                  "description": "Auto-generated MongoDB ObjectId",
+                  "example": "675f3a4b5c6789012347"
+                },
+                "technicianId": {
+                  "type": "string",
+                  "description": "Partner ID (same for all services)",
+                  "example": "693ab8796496b01c810ffd90"
+                },
+                "serviceImage": {
+                  "type": "string"
+                },
+                "serviceName": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "minPrice": {
+                  "type": "number"
+                },
+                "maxPrice": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalServices": {
+                "type": "integer"
+              },
+              "technicianId": {
+                "type": "string"
+              },
+              "technicianName": {
+                "type": "string"
+              }
+            }
+          },
+          "note": {
+            "type": "string",
+            "example": "You can login after admin approval"
+          }
+        }
+      },
+      "GenericProfileResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Profile completed successfully! ✅ Your account is pending admin approval."
+          },
+          "partner": {
+            "$ref": "#/components/schemas/Partner"
+          },
+          "note": {
+            "type": "string",
+            "example": "You can login after admin approval"
           }
         }
       },
@@ -4842,9 +5903,14 @@
           },
           "services": {
             "type": "array",
-            "description": "For Repair Technician only",
+            "description": "For Repair Technician only. Backend auto-generates serviceId for each service.",
             "items": {
               "type": "object",
+              "required": [
+                "serviceName",
+                "minPrice",
+                "maxPrice"
+              ],
               "properties": {
                 "serviceImage": {
                   "type": "string"
@@ -4901,9 +5967,14 @@
           },
           "products": {
             "type": "array",
-            "description": "For Product Seller only",
+            "description": "For Product Seller only. Backend auto-generates productId for each product.",
             "items": {
               "type": "object",
+              "required": [
+                "productTitle",
+                "unitPrice",
+                "stockQuantity"
+              ],
               "properties": {
                 "productImage": {
                   "type": "string"

@@ -2,7 +2,7 @@ import express from "express";
 import ServiceBookingController from "../../controllers/customer/serviceBookingControllers.js";
 import { verifyAccessToken } from "../../middlewares/authMiddleware.js"; // Customer
 import { verifyAccessToken as verifyPartnerToken, checkRole } from "../../middlewares/partnerAuthMiddleware.js"; // Partner
-import { verifyAdminAccessToken } from "../../middlewares/adminMiddleware.js"; // Admin
+import {verifyAdminAccessToken, superAdminOnly } from "../../middlewares/adminMiddleware.js"; // Admin
 
 const router = express.Router();
 
@@ -65,13 +65,13 @@ router.post(
 // ==================== ADMIN ROUTES ====================
 
 // Get all pending service requests (Admin only)
-router.get("/admin/pending", verifyAdminAccessToken, ServiceBookingController.getPendingServiceRequests);
+router.get("/admin/pending", verifyAdminAccessToken, superAdminOnly, ServiceBookingController.getPendingServiceRequests);
 
 // Get all service requests (Admin only)
-router.get("/admin/all", verifyAdminAccessToken, ServiceBookingController.getAllServiceRequests);
+router.get("/admin/all", verifyAdminAccessToken, superAdminOnly, ServiceBookingController.getAllServiceRequests);
 
 // Manually assign/reassign technician (Admin only)
-router.post("/admin/assign-technician", verifyAdminAccessToken, ServiceBookingController.assignTechnicianToService);
+router.post("/admin/assign-technician", verifyAdminAccessToken, superAdminOnly, ServiceBookingController.assignTechnicianToService);
 
 // ==================== NOTES ====================
 /*

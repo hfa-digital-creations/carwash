@@ -342,46 +342,81 @@ const updateShopDetails = async (req, res) => {
 
 // ==================== PRODUCT SELLER ====================
 
-// Add New Product (Product Seller)
 const addProduct = async (req, res) => {
   try {
     const partnerId = req.partner._id;
-    const { productImage, productTitle, productDescription, unitPrice, stockQuantity } = req.body;
-
-    if (!productTitle || !unitPrice || !stockQuantity) {
-      return res.status(400).json({ message: "Product title, price, and quantity are required" });
-    }
-
+    
     const partner = await Partner.findById(partnerId);
+    
     if (!partner) {
       return res.status(404).json({ message: "Partner not found" });
     }
-
+    
     if (partner.role !== "Product Seller") {
-      return res.status(400).json({ message: "Only Product Sellers can add products" });
+      return res.status(403).json({ 
+        message: "Only Product Sellers can add products" 
+      });
     }
-
-    // Add new product
-    partner.products.push({
-      productImage,
-      productTitle,
-      productDescription,
-      unitPrice,
-      stockQuantity
-    });
-
+    
+    const { productTitle, unitPrice, stockQuantity } = req.body;
+    
+    if (!productTitle || !unitPrice || stockQuantity === undefined) {
+      return res.status(400).json({ 
+        message: "Required: productTitle, unitPrice, stockQuantity" 
+      });
+    }
+    
+    // ⭐⭐⭐ GENERATE ID MANUALLY FIRST
+    const productId = new mongoose.Types.ObjectId();
+    
+    console.log("Generated Product ID:", productId);
+    console.log("Product ID String:", productId.toString());
+    
+    // ⭐⭐⭐ SET _id EXPLICITLY
+    const productData = {
+      _id: productId,  // Set manually!
+      productImage: req.body.productImage || "",
+      productTitle: req.body.productTitle,
+      productDescription: req.body.productDescription || "",
+      unitPrice: parseFloat(req.body.unitPrice),
+      stockQuantity: parseInt(req.body.stockQuantity)
+    };
+    
+    console.log("Product Data:", productData);
+    
+    // Push and save
+    partner.products.push(productData);
     await partner.save();
-
-    console.log(`✅ New product added: ${productTitle} by ${partner.fullName}`);
-
-    res.status(201).json({
-      message: "Product added successfully",
-      products: partner.products
+    
+    console.log("Product saved successfully!");
+    
+    // ⭐⭐⭐ USE THE MANUALLY GENERATED ID
+    return res.status(201).json({
+      message: "Product added successfully ✅",
+      product: {
+        productId: productId.toString(),  // Use generated ID
+        productImage: productData.productImage,
+        productTitle: productData.productTitle,
+        productDescription: productData.productDescription,
+        unitPrice: productData.unitPrice,
+        stockQuantity: productData.stockQuantity
+      },
+      seller: {
+        sellerId: partner._id.toString(),
+        sellerName: partner.fullName,
+        shopName: partner.shopDetails?.shopName || partner.fullName,
+        role: partner.role,
+        rating: partner.avgRating || 0
+      },
+      note: "Use productId and sellerId when customer creates order"
     });
-
+    
   } catch (error) {
-    console.error("❌ Add product error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("Add Product Error:", error);
+    return res.status(500).json({ 
+      message: "Server error", 
+      error: error.message 
+    });
   }
 };
 

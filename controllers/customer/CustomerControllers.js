@@ -247,8 +247,8 @@ const verifyRegistrationOTP = async (req, res) => {
       isActive: true,
     });
 
-    // 🔥 Generate both Firebase and JWT tokens
-    const { customToken, accessToken, refreshToken } = await generateTokens(newUser._id, {
+    // Generate JWT tokens (accessToken & refreshToken only)
+    const { accessToken, refreshToken } = await generateTokens(newUser._id, {
       email: newUser.email,
       phoneNumber: newUser.phoneNumber,
     });
@@ -289,16 +289,8 @@ const verifyRegistrationOTP = async (req, res) => {
         phoneNumber: newUser.phoneNumber,
         referralCode: newUser.referralCode,
       },
-      // Firebase Custom Token - For client app
-      customToken,
-      // JWT Tokens - For Postman/testing
       accessToken,
       refreshToken,
-      tokenInfo: {
-        customToken: "Use with firebase.auth().signInWithCustomToken() in client app",
-        accessToken: "Use directly in Postman: Authorization: Bearer <accessToken>",
-        refreshToken: "Use to get new accessToken when expired"
-      }
     });
   } catch (error) {
     console.error("❌ Verify OTP error:", error);
@@ -337,8 +329,8 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
-    // 🔥 Generate both Firebase and JWT tokens
-    const { customToken, accessToken, refreshToken } = await generateTokens(user._id, {
+    // Generate JWT tokens (accessToken & refreshToken only)
+    const { accessToken, refreshToken } = await generateTokens(user._id, {
       email: user.email,
       phoneNumber: user.phoneNumber,
     });
@@ -352,13 +344,8 @@ const loginUser = async (req, res) => {
         phoneNumber: user.phoneNumber,
         referralCode: user.referralCode,
       },
-      customToken,
       accessToken,
       refreshToken,
-      tokenInfo: {
-        customToken: "Use with firebase.auth().signInWithCustomToken() in client app",
-        accessToken: "Use directly in Postman: Authorization: Bearer <accessToken>",
-      }
     });
   } catch (error) {
     console.error("❌ Login error:", error);

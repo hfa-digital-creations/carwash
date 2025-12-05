@@ -9,52 +9,115 @@ const createProductOrder = async (req, res) => {
   try {
     const {
       customerId,
-      items, // [{ productId, sellerId, productTitle, productImage, unitPrice, quantity }]
+      items, // [{ productId, sellerId, quantity }] - Backend fetches product details
       shippingAddress,
       paymentMethod,
-      subtotal,
-      shippingCharges,
-      discount,
-      couponCode,
-      total
+      couponCode
     } = req.body;
 
+    // Validate required fields
     if (!customerId || !items || items.length === 0 || !shippingAddress || !paymentMethod) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ 
+        message: "Required: customerId, items, shippingAddress, paymentMethod" 
+      });
     }
 
+    // ⭐ 1. VERIFY CUSTOMER EXISTS
     const customer = await Customer.findById(customerId);
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    // Process items and get seller details
-    const processedItems = await Promise.all(
-      items.map(async (item) => {
-        const seller = await Partner.findById(item.sellerId);
-        return {
-          productId: item.productId,
-          sellerId: item.sellerId,
-          sellerName: seller ? seller.fullName : "Unknown Seller",
-          productImage: item.productImage,
-          productTitle: item.productTitle,
-          productDescription: item.productDescription,
-          unitPrice: item.unitPrice,
-          quantity: item.quantity,
-          subtotal: item.unitPrice * item.quantity
-        };
-      })
-    );
+    // ⭐ 2. VERIFY PRODUCTS & CHECK STOCK
+    const validatedItems = [];
+    
+    for (let item of items) {
+      if (!item.productId || !item.sellerId || !item.quantity) {
+        return res.status(400).json({ 
+          message: "Each item must have productId, sellerId, and quantity" 
+        });
+      }
 
-    // ✅ Create order with "Pending" status (waiting for seller confirmation)
+      // Find seller with this product
+      const seller = await Partner.findOne({
+        _id: item.sellerId,
+        role: "Product Seller",
+        "products._id": item.productId
+      });
+
+      if (!seller) {
+        return res.status(400).json({ 
+          message: `Product not found or seller invalid` 
+        });
+      }
+
+      // Get product details from database
+      const product = seller.products.id(item.productId);
+
+      if (!product) {
+        return res.status(400).json({ 
+          message: `Product not found in seller's inventory` 
+        });
+      }
+
+      // Check stock availability
+      if (product.stockQuantity < item.quantity) {
+        return res.status(400).json({ 
+          message: `Insufficient stock for ${product.productTitle}. Available: ${product.stockQuantity}` 
+        });
+      }
+
+      // ⭐ USE BACKEND PRODUCT DATA (don't trust frontend)
+      const itemSubtotal = product.unitPrice * item.quantity;
+      
+      validatedItems.push({
+        productId: product._id,
+        sellerId: seller._id,
+        sellerName: seller.fullName,
+        productImage: product.productImage,
+        productTitle: product.productTitle,
+        productDescription: product.productDescription,
+        unitPrice: product.unitPrice,  // ⭐ From database
+        quantity: item.quantity,
+        subtotal: itemSubtotal
+      });
+    }
+
+    // ⭐ 3. CALCULATE TOTALS (Backend authority)
+    const backendSubtotal = validatedItems.reduce((sum, item) => sum + item.subtotal, 0);
+    
+    // Shipping rules: Free shipping above ₹500
+    const backendShipping = backendSubtotal > 500 ? 0 : 50;
+    
+    // Validate coupon
+    let backendDiscount = 0;
+    let appliedCoupon = "";
+    
+    if (couponCode) {
+      // Simple coupon validation (expand based on your voucher model)
+      const code = couponCode.toUpperCase();
+      if (code === "FIRST50") {
+        backendDiscount = 50;
+        appliedCoupon = "FIRST50";
+      } else if (code === "SHOP500") {
+        if (backendSubtotal >= 1000) {
+          backendDiscount = 500;
+          appliedCoupon = "SHOP500";
+        }
+      }
+    }
+
+    const backendTotal = backendSubtotal + backendShipping - backendDiscount;
+
+    // ⭐ 4. CREATE ORDER WITH BACKEND VALUES
     const newOrder = await ProductOrder.create({
       customerId,
       customerName: customer.fullName,
       customerEmail: customer.email,
       customerPhone: customer.phoneNumber,
-      items: processedItems,
+      items: validatedItems,  // ⭐ Validated items with DB data
       shippingAddress,
-      orderStatus: "Pending", // ✅ Waiting for seller/admin confirmation
+      orderStatus: "Pending", // ✅ Waiting for seller confirmation
       statusTimeline: [{
         status: "Pending",
         timestamp: new Date(),
@@ -62,50 +125,94 @@ const createProductOrder = async (req, res) => {
       }],
       paymentMethod,
       paymentStatus: "Pending",
-      subtotal,
-      shippingCharges: shippingCharges || 0,
-      discount: discount || 0,
-      couponCode,
-      total,
+      subtotal: backendSubtotal,        // ⭐ Backend calculated
+      shippingCharges: backendShipping,  // ⭐ Backend calculated
+      discount: backendDiscount,         // ⭐ Backend calculated
+      couponCode: appliedCoupon,
+      total: backendTotal                // ⭐ Backend calculated
     });
 
-    // ✅ Notify customer
+    // ⭐ 5. UPDATE STOCK FOR EACH PRODUCT
+    for (let item of validatedItems) {
+      await Partner.updateOne(
+        { 
+          _id: item.sellerId,
+          "products._id": item.productId
+        },
+        { 
+          $inc: { "products.$.stockQuantity": -item.quantity }
+        }
+      );
+    }
+
+    // ⭐ 6. CREATE NOTIFICATIONS
+    // Notify customer
     await Notification.create({
       recipientId: customerId,
       recipientType: "Customer",
       type: "Order Placed",
       title: "Order Placed Successfully",
-      message: `Your order ${newOrder.orderId} has been placed and is waiting for seller confirmation`,
+      message: `Your order ${newOrder.orderId} has been placed. Total: ₹${backendTotal}`,
       relatedId: newOrder.orderId,
       relatedType: "ProductOrder",
       priority: "High"
     });
 
-    // ✅ Notify all sellers
-    const uniqueSellers = [...new Set(items.map(item => item.sellerId))];
-    for (const sellerId of uniqueSellers) {
+    // Notify each seller
+    const uniqueSellers = [...new Set(validatedItems.map(item => item.sellerId.toString()))];
+    
+    for (let sellerId of uniqueSellers) {
+      const sellerItems = validatedItems.filter(item => item.sellerId.toString() === sellerId);
+      const sellerTotal = sellerItems.reduce((sum, item) => sum + item.subtotal, 0);
+      
       await Notification.create({
         recipientId: sellerId,
         recipientType: "Partner",
         type: "New Order Received",
         title: "New Order Received",
-        message: `New order ${newOrder.orderId} received. Please confirm.`,
+        message: `New order ${newOrder.orderId} received. Order value: ₹${sellerTotal}`,
         relatedId: newOrder.orderId,
         relatedType: "ProductOrder",
         priority: "High"
       });
     }
 
-    console.log(`✅ Order created: ${newOrder.orderId} - Status: Pending`);
+    console.log(`✅ Order created: ${newOrder.orderId} - Total: ₹${backendTotal} (Backend calculated)`);
 
+    // ⭐ 7. RETURN RESPONSE WITH BACKEND CALCULATED VALUES
     res.status(201).json({
-      message: "Order created successfully! Waiting for seller confirmation.",
-      order: newOrder
+      message: "Order created successfully! ✅",
+      order: {
+        orderId: newOrder.orderId,
+        customerId: newOrder.customerId,
+        customerName: newOrder.customerName,
+        customerEmail: newOrder.customerEmail,
+        items: newOrder.items,
+        shippingAddress: newOrder.shippingAddress,
+        orderStatus: newOrder.orderStatus,
+        paymentMethod: newOrder.paymentMethod,
+        subtotal: backendSubtotal,        // ⭐ Backend calculated
+        shippingCharges: backendShipping,  // ⭐ Backend calculated
+        discount: backendDiscount,         // ⭐ Backend calculated
+        couponCode: appliedCoupon,
+        total: backendTotal,               // ⭐ Backend calculated
+        createdAt: newOrder.createdAt
+      },
+      summary: {
+        totalItems: validatedItems.length,
+        uniqueSellers: uniqueSellers.length,
+        stockUpdated: true,
+        notificationsSent: true
+      },
+      note: "Order is pending seller confirmation"
     });
 
   } catch (error) {
     console.error("❌ Create order error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Failed to create order", 
+      error: error.message 
+    });
   }
 };
 
@@ -624,6 +731,19 @@ const cancelOrder = async (req, res) => {
       return res.status(400).json({ message: `Order is already ${order.orderStatus}` });
     }
 
+    // ⭐ RESTORE STOCK when order is cancelled
+    for (let item of order.items) {
+      await Partner.updateOne(
+        { 
+          _id: item.sellerId,
+          "products._id": item.productId
+        },
+        { 
+          $inc: { "products.$.stockQuantity": item.quantity }
+        }
+      );
+    }
+
     order.orderStatus = "Cancelled";
     order.cancellationReason = cancellationReason;
     order.cancelledBy = cancelledBy;
@@ -637,7 +757,7 @@ const cancelOrder = async (req, res) => {
 
     // Notify relevant parties
     if (cancelledBy === "Customer") {
-      const uniqueSellers = [...new Set(order.items.map(item => item.sellerId))];
+      const uniqueSellers = [...new Set(order.items.map(item => item.sellerId.toString()))];
       for (const sellerId of uniqueSellers) {
         await Notification.create({
           recipientId: sellerId,
@@ -651,8 +771,10 @@ const cancelOrder = async (req, res) => {
       }
     }
 
+    console.log(`⚠️ Order cancelled: ${order.orderId} - Stock restored`);
+
     res.status(200).json({
-      message: "Order cancelled successfully",
+      message: "Order cancelled successfully. Stock has been restored.",
       order
     });
 

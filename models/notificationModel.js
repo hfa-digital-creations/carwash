@@ -14,39 +14,49 @@ const notificationSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
-      // Customer notifications
+      // Customer notifications - Booking
       "Booking Confirmed",
       "Partner Assigned",
       "Partner Accepted",
       "Partner Declined",
-      "Partner On The Way",
-      "Partner Arrived",
-      "Service Started",
-      "Service Completed",
+      "Washer On The Way",
+      "Washer Arrived",
+      "Washing in Progress",
+      "Completed",
+      "Cancelled",
+      
+      // Customer notifications - Orders
       "Order Placed",
       "Order Confirmed",
+      "Order Processing",
       "Order Shipped",
       "Out for Delivery",
       "Order Delivered",
       "Delivery Accepted",
       "Delivery Declined",
+      "Order Cancelled",
+      
+      // Customer notifications - Service
       "Service Request Placed",
+      "Technician Assigned",
       "Service Accepted",
       "Service Declined",
       "Service Ongoing",
-      "Payment Reminder",
+      "Service Completed",
+      "Service Cancelled",
       
       // Partner notifications
       "New Booking Request",
       "New Service Request",
       "New Order Received",
-      "Booking Cancelled",
-      "Order Cancelled",
-      "Service Cancelled",
       "Payment Received",
       "New Review Received",
+      "Booking Reassigned",
+      "Order Reassigned",
+      "Service Reassigned",
       
       // General
+      "Payment Reminder",
       "Promotional",
       "Alert",
       "Reminder"

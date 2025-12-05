@@ -81,20 +81,6 @@ export const updateAdmin = async (req, res) => {
   res.status(200).json({ message: "Admin updated", admin });
 };
 
-// Change Password
-export const changePassword = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-  const admin = await Admin.findById(req.userId);
-  if (!admin) return res.status(404).json({ message: "Admin not found" });
-
-  const isMatch = await admin.matchPassword(currentPassword);
-  if (!isMatch) return res.status(400).json({ message: "Current password incorrect" });
-
-  admin.password = newPassword;
-  await admin.save();
-  res.status(200).json({ message: "Password changed" });
-};
-
 // Delete Admin
 export const deleteAdmin = async (req, res) => {
   if (req.userId === req.params.id) return res.status(400).json({ message: "Cannot delete self" });

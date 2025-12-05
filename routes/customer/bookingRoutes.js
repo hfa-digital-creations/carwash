@@ -37,16 +37,16 @@ router.put("/:id/update-status", verifyPartnerToken, BookingController.updateBoo
 // ==================== ADMIN ROUTES ====================
 
 // Get all pending bookings (Admin only)
-router.get("/admin/pending", verifyAdminAccessToken, BookingController.getPendingBookings);
+router.get("/admin/pending", verifyAdminAccessToken, superAdminOnly, BookingController.getPendingBookings);
 
 // Get all bookings with filter (Admin only)
-router.get("/admin/all", verifyAdminAccessToken, BookingController.getAllBookings);
+router.get("/admin/all", verifyAdminAccessToken, superAdminOnly, BookingController.getAllBookings);
 
 // Approve booking (Admin only)
-router.put("/admin/:id/approve", verifyAdminAccessToken, BookingController.approveBooking);
+router.put("/admin/:id/approve", verifyAdminAccessToken, superAdminOnly, BookingController.approveBooking);
 
 // Manually assign partner to booking (Admin only)
-router.post("/admin/assign-partner", verifyAdminAccessToken, BookingController.assignPartnerToBooking);
+router.post("/admin/assign-partner", verifyAdminAccessToken, superAdminOnly, BookingController.assignPartnerToBooking);
 
 // ==================== NOTES ====================
 /*

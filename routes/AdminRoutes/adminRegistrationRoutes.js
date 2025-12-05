@@ -12,7 +12,7 @@ router.post("/refresh-token", refreshAccessToken);
 // Protected
 router.post("/logout", verifyAdminAccessToken, logout);
 router.get("/profile", verifyAdminAccessToken, adminController.getProfile);
-router.put("/change-password", verifyAdminAccessToken, adminController.changePassword);
+
 
 // SuperAdmin Only
 router.post("/register", verifyAdminAccessToken, superAdminOnly, adminController.registerAdmin);

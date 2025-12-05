@@ -46,11 +46,11 @@ const formatPhoneNumber = (phone) => {
 const registrationStore = {};
 const passwordResetStore = {};
 
-// ✅ Token Blacklist Storage
+// Token Blacklist Storage
 const tokenBlacklist = new Set();
 const refreshTokenBlacklist = new Set();
 
-// ✅ Helper: Add token to blacklist with auto-cleanup
+// Helper: Add token to blacklist with auto-cleanup
 const blacklistToken = (token, expiryTime = 24 * 60 * 60 * 1000) => {
   tokenBlacklist.add(token);
   setTimeout(() => {
@@ -67,7 +67,7 @@ const blacklistRefreshToken = (token, expiryTime = 7 * 24 * 60 * 60 * 1000) => {
   }, expiryTime);
 };
 
-// ✅ Export for middleware use
+// Export for middleware use
 export const isTokenBlacklisted = (token) => {
   return tokenBlacklist.has(token);
 };
@@ -76,9 +76,7 @@ export const isRefreshTokenBlacklisted = (token) => {
   return refreshTokenBlacklist.has(token);
 };
 
-// ==================== REGISTRATION (WITH OTP) ====================
-
-// -------------------- STEP 1: Register & Send OTP --------------------
+// ==================== STEP 1: REGISTER & SEND OTP ====================
 const registerPartner = async (req, res) => {
   try {
     const { 
@@ -129,17 +127,17 @@ const registerPartner = async (req, res) => {
     // Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Delete existing OTPs for this email
+    // Delete existing OTPs
     await OTP.deleteMany({ email: email.toLowerCase() });
 
-    // Save OTP in database
+    // Save OTP
     await OTP.create({
       email: email.toLowerCase(),
       otp,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // Store registration data temporarily (30 minutes for profile completion)
+    // Store registration data temporarily
     registrationStore[phoneNumber] = {
       fullName,
       email: email.toLowerCase(),
@@ -153,7 +151,7 @@ const registerPartner = async (req, res) => {
       expiresAt: Date.now() + 30 * 60 * 1000,
     };
 
-    console.log(`📝 Partner Registration OTP for ${phoneNumber}: ${otp}`);
+    console.log(`📝 Registration OTP for ${phoneNumber}: ${otp}`);
 
     // Send OTP via SMS
     const formattedPhone = formatPhoneNumber(phoneNumber);
@@ -165,7 +163,7 @@ const registerPartner = async (req, res) => {
         to: formattedPhone,
       });
 
-      console.log(`✅ SMS OTP sent to ${formattedPhone}`);
+      console.log(`✅ SMS sent to ${formattedPhone}`);
 
       return res.status(200).json({
         message: "OTP sent to your phone number ✅",
@@ -174,7 +172,6 @@ const registerPartner = async (req, res) => {
     } catch (smsError) {
       console.error("❌ SMS error:", smsError.message);
       
-      // Development mode: show OTP
       if (process.env.NODE_ENV === "development") {
         return res.status(200).json({
           message: "⚠️ SMS failed. OTP shown for testing.",
@@ -195,8 +192,7 @@ const registerPartner = async (req, res) => {
   }
 };
 
-// -------------------- STEP 2: Verify OTP (DON'T CREATE ACCOUNT YET) --------------------
-// -------------------- STEP 2: Verify OTP & CREATE ACCOUNT --------------------
+// ==================== STEP 2: VERIFY OTP & CREATE ACCOUNT ====================
 const verifyRegistrationOTP = async (req, res) => {
   try {
     const { phoneNumber, otp } = req.body;
@@ -245,10 +241,10 @@ const verifyRegistrationOTP = async (req, res) => {
     otpRecord.isUsed = true;
     await otpRecord.save();
 
-    // ✅ Hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(registrationData.password, 10);
 
-    // ✅ CREATE ACCOUNT NOW (with basic info only)
+    // CREATE ACCOUNT (basic info only)
     const newPartner = await Partner.create({
       fullName: registrationData.fullName,
       email: registrationData.email,
@@ -259,11 +255,11 @@ const verifyRegistrationOTP = async (req, res) => {
       role: registrationData.role,
       referredBy: registrationData.referredBy,
       isVerified: true,
-      isActive: false, // ✅ Admin approval needed
+      isActive: false,
     });
 
-    // ✅ Generate tokens
-    const { customToken, accessToken, refreshToken } = await generateTokens(
+    // Generate tokens (accessToken & refreshToken only)
+    const { accessToken, refreshToken } = await generateTokens(
       newPartner._id, 
       {
         email: newPartner.email,
@@ -290,7 +286,6 @@ const verifyRegistrationOTP = async (req, res) => {
         isActive: newPartner.isActive,
         profileComplete: false,
       },
-      customToken,
       accessToken,
       refreshToken,
       nextStep: "Complete your profile with address, vehicle/shop, and payout details",
@@ -301,37 +296,28 @@ const verifyRegistrationOTP = async (req, res) => {
   }
 };
 
-// -------------------- STEP 3: Complete Profile (Requires Auth) --------------------
+// ==================== STEP 3: COMPLETE PROFILE ====================
 const completePartnerProfile = async (req, res) => {
   try {
-    const { id } = req.params; // ✅ Get ID from URL params
+    const { id } = req.params;
     const profileData = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid partner ID" });
     }
 
-    // ✅ Get partner from database
     const partner = await Partner.findById(id);
     if (!partner) {
-      return res.status(404).json({ 
-        message: "Partner not found" 
-      });
+      return res.status(404).json({ message: "Partner not found" });
     }
 
-    // ✅ Check if already profile completed (optional)
-    // if (partner.address && partner.payoutDetails) {
-    //   return res.status(400).json({ 
-    //     message: "Profile already completed. Use updateProfile to edit." 
-    //   });
-    // }
-
-    // ✅ Add profile-specific data
+    // Add common profile data
     if (profileData.address) partner.address = profileData.address;
     if (profileData.emergencyContact) partner.emergencyContact = profileData.emergencyContact;
 
     // Role-specific data
     const role = partner.role;
+    
     switch (role) {
       case "Washing Personnel":
         if (profileData.serviceCategories) partner.serviceCategories = profileData.serviceCategories;
@@ -344,7 +330,19 @@ const completePartnerProfile = async (req, res) => {
 
       case "Repair Service Technician":
         if (profileData.shopDetails) partner.shopDetails = profileData.shopDetails;
-        if (profileData.services) partner.services = profileData.services;
+        
+        // ⭐ Process services with ObjectId generation
+        if (profileData.services && Array.isArray(profileData.services)) {
+          partner.services = profileData.services.map(service => ({
+            _id: new mongoose.Types.ObjectId(),
+            serviceImage: service.serviceImage || "",
+            serviceName: service.serviceName,
+            description: service.description || "",
+            minPrice: parseFloat(service.minPrice),
+            maxPrice: parseFloat(service.maxPrice)
+          }));
+        }
+        
         if (profileData.yearsOfExperience) partner.yearsOfExperience = profileData.yearsOfExperience;
         if (profileData.specializations) partner.specializations = profileData.specializations;
         if (profileData.certifications) partner.certifications = profileData.certifications;
@@ -354,20 +352,32 @@ const completePartnerProfile = async (req, res) => {
 
       case "Product Seller":
         if (profileData.shopDetails) partner.shopDetails = profileData.shopDetails;
-        if (profileData.products) partner.products = profileData.products;
+        
+        // ⭐ Process products with ObjectId generation
+        if (profileData.products && Array.isArray(profileData.products)) {
+          partner.products = profileData.products.map(product => ({
+            _id: new mongoose.Types.ObjectId(), // ⭐ Generate productId
+            productImage: product.productImage || "",
+            productTitle: product.productTitle,
+            productDescription: product.productDescription || "",
+            unitPrice: parseFloat(product.unitPrice),
+            stockQuantity: parseInt(product.stockQuantity)
+          }));
+        }
         break;
     }
 
     // Payout details
     if (profileData.payoutDetails) partner.payoutDetails = profileData.payoutDetails;
 
-    // ✅ Save profile
+    // Save profile
     await partner.save();
 
-    console.log(`✅ Profile completed for: ${partner.email}`);
+    console.log(`✅ Profile completed: ${partner.email} (${role})`);
     console.log(`⏳ Waiting for admin approval...`);
 
-    return res.status(200).json({
+    // Build response
+    const responseData = {
       message: "Profile completed successfully! ✅ Your account is pending admin approval.",
       partner: {
         id: partner._id,
@@ -380,7 +390,48 @@ const completePartnerProfile = async (req, res) => {
         profileComplete: true,
       },
       note: "You can login after admin approval",
-    });
+    };
+
+    // ⭐ Add products with IDs for Product Sellers
+    if (role === "Product Seller" && partner.products && partner.products.length > 0) {
+      responseData.products = partner.products.map(product => ({
+        productId: product._id.toString(),  // ⭐ Product ID
+        sellerId: partner._id.toString(),    // ⭐ Seller ID
+        productImage: product.productImage,
+        productTitle: product.productTitle,
+        productDescription: product.productDescription,
+        unitPrice: product.unitPrice,
+        stockQuantity: product.stockQuantity
+      }));
+      responseData.summary = {
+        totalProducts: partner.products.length,
+        sellerId: partner._id.toString(),
+        sellerName: partner.fullName
+      };
+      responseData.note = "Products added successfully! You can login after admin approval.";
+      console.log(`📦 ${partner.products.length} products added`);
+    }
+
+    // ⭐ Add services with IDs for Repair Technicians
+    if (role === "Repair Service Technician" && partner.services && partner.services.length > 0) {
+      responseData.services = partner.services.map(service => ({
+        serviceId: service._id.toString(),     // ⭐ Service ID
+        technicianId: partner._id.toString(),  // ⭐ Technician ID
+        serviceImage: service.serviceImage,
+        serviceName: service.serviceName,
+        description: service.description,
+        minPrice: service.minPrice,
+        maxPrice: service.maxPrice
+      }));
+      responseData.summary = {
+        totalServices: partner.services.length,
+        technicianId: partner._id.toString(),
+        technicianName: partner.fullName
+      };
+      console.log(`🔧 ${partner.services.length} services added`);
+    }
+
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error("❌ Complete profile error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -411,7 +462,7 @@ const loginPartner = async (req, res) => {
       return res.status(403).json({ message: "Please verify your account first" });
     }
 
-    // ✅ Check if admin approved
+    // Check if admin approved
     if (!partner.isActive) {
       return res.status(403).json({ 
         message: "Your account is pending admin approval. Please wait for activation.",
@@ -424,7 +475,8 @@ const loginPartner = async (req, res) => {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
-    const { customToken, accessToken, refreshToken } = await generateTokens(
+    // Generate tokens (accessToken & refreshToken only)
+    const { accessToken, refreshToken } = await generateTokens(
       partner._id, 
       {
         email: partner.email,
@@ -445,7 +497,6 @@ const loginPartner = async (req, res) => {
         referralCode: partner.referralCode,
         isActive: partner.isActive,
       },
-      customToken,
       accessToken,
       refreshToken,
     });
@@ -458,44 +509,35 @@ const loginPartner = async (req, res) => {
 // ==================== LOGOUT ====================
 const logoutPartner = async (req, res) => {
   try {
-    // Get tokens from request
     const authHeader = req.headers.authorization;
     const accessToken = authHeader && authHeader.split(' ')[1];
     const { refreshToken } = req.body;
 
     if (!accessToken) {
-      return res.status(400).json({ 
-        message: "No token provided" 
-      });
+      return res.status(400).json({ message: "No token provided" });
     }
 
-    // Blacklist access token (24 hours)
+    // Blacklist tokens
     blacklistToken(accessToken, 24 * 60 * 60 * 1000);
     console.log(`🚫 Access token blacklisted`);
 
-    // Blacklist refresh token if provided (7 days)
     if (refreshToken) {
       blacklistRefreshToken(refreshToken, 7 * 24 * 60 * 60 * 1000);
       console.log(`🚫 Refresh token blacklisted`);
     }
 
-    // Log partner info if available from middleware
     if (req.partner) {
-      console.log(`👋 Partner logged out: ${req.partner.email} (${req.partner._id})`);
+      console.log(`👋 Partner logged out: ${req.partner.email}`);
     }
 
-    res.status(200).json({
-      message: "Logout successful ✅",
-    });
+    res.status(200).json({ message: "Logout successful ✅" });
   } catch (error) {
     console.error("❌ Logout error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// ==================== FORGOT PASSWORD (WITH OTP) ====================
-
-// -------------------- STEP 1: Send OTP --------------------
+// ==================== FORGOT PASSWORD - STEP 1: SEND OTP ====================
 const forgotPassword = async (req, res) => {
   try {
     const { emailOrPhone } = req.body;
@@ -506,7 +548,6 @@ const forgotPassword = async (req, res) => {
 
     const isEmail = emailOrPhone.includes("@");
 
-    // Find partner
     const partner = await Partner.findOne(
       isEmail
         ? { email: emailOrPhone.toLowerCase() }
@@ -520,12 +561,12 @@ const forgotPassword = async (req, res) => {
     // Generate OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Store OTP data in memory
+    // Store in memory
     passwordResetStore[emailOrPhone] = {
       otp,
       partnerId: partner._id,
       verified: false,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+      expiresAt: Date.now() + 10 * 60 * 1000,
     };
 
     console.log(`📝 Password reset OTP for ${emailOrPhone}: ${otp}`);
@@ -541,18 +582,17 @@ const forgotPassword = async (req, res) => {
             <h2>Password Reset Request</h2>
             <p>Your password reset OTP is: <strong>${otp}</strong></p>
             <p>This OTP is valid for 10 minutes.</p>
-            <p>If you didn't request this, please ignore this email.</p>
           `,
         });
-        console.log(`✅ Email OTP sent to ${emailOrPhone}`);
+        console.log(`✅ Email sent to ${emailOrPhone}`);
       } else {
         const formattedPhone = formatPhoneNumber(emailOrPhone);
         await getTwilioClient().messages.create({
-          body: `Your SparkleWash Partner password reset OTP is: ${otp}. Valid for 10 minutes.`,
+          body: `Your SparkleWash password reset OTP is: ${otp}. Valid for 10 minutes.`,
           from: process.env.TWILIO_PHONE_NUMBER,
           to: formattedPhone,
         });
-        console.log(`✅ SMS OTP sent to ${formattedPhone}`);
+        console.log(`✅ SMS sent to ${formattedPhone}`);
       }
 
       return res.status(200).json({
@@ -562,10 +602,9 @@ const forgotPassword = async (req, res) => {
     } catch (sendError) {
       console.error(`❌ ${isEmail ? "Email" : "SMS"} error:`, sendError.message);
 
-      // Development mode: show OTP
       if (process.env.NODE_ENV === "development") {
         return res.status(200).json({
-          message: `⚠️ ${isEmail ? "Email" : "SMS"} service failed. OTP shown for testing only.`,
+          message: `⚠️ ${isEmail ? "Email" : "SMS"} failed. OTP shown for testing.`,
           sentTo: emailOrPhone,
           otp,
           error: sendError.message,
@@ -573,7 +612,7 @@ const forgotPassword = async (req, res) => {
       }
 
       return res.status(500).json({
-        message: `Failed to send OTP via ${isEmail ? "email" : "SMS"}`,
+        message: `Failed to send OTP`,
         error: sendError.message
       });
     }
@@ -583,7 +622,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// -------------------- STEP 2: Verify OTP --------------------
+// ==================== FORGOT PASSWORD - STEP 2: VERIFY OTP ====================
 const verifyResetOTP = async (req, res) => {
   try {
     const { emailOrPhone, otp } = req.body;
@@ -595,21 +634,21 @@ const verifyResetOTP = async (req, res) => {
     const storedData = passwordResetStore[emailOrPhone];
 
     if (!storedData) {
-      return res.status(400).json({ message: "OTP not found or expired. Please request a new OTP." });
+      return res.status(400).json({ message: "OTP not found or expired" });
     }
 
     if (storedData.expiresAt < Date.now()) {
       delete passwordResetStore[emailOrPhone];
-      return res.status(400).json({ message: "OTP expired. Please request a new OTP." });
+      return res.status(400).json({ message: "OTP expired" });
     }
 
     if (storedData.otp !== otp) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Mark as verified and extend expiry
+    // Mark as verified
     passwordResetStore[emailOrPhone].verified = true;
-    passwordResetStore[emailOrPhone].expiresAt = Date.now() + 5 * 60 * 1000; // 5 more minutes
+    passwordResetStore[emailOrPhone].expiresAt = Date.now() + 5 * 60 * 1000;
 
     res.status(200).json({
       message: "OTP verified successfully ✅",
@@ -621,7 +660,7 @@ const verifyResetOTP = async (req, res) => {
   }
 };
 
-// -------------------- STEP 3: Reset Password --------------------
+// ==================== FORGOT PASSWORD - STEP 3: RESET PASSWORD ====================
 const resetPassword = async (req, res) => {
   try {
     const { emailOrPhone, newPassword, confirmPassword } = req.body;
@@ -641,9 +680,7 @@ const resetPassword = async (req, res) => {
     const storedData = passwordResetStore[emailOrPhone];
 
     if (!storedData) {
-      return res.status(400).json({
-        message: "Session expired. Please request a new OTP"
-      });
+      return res.status(400).json({ message: "Session expired" });
     }
 
     if (!storedData.verified) {
@@ -652,9 +689,7 @@ const resetPassword = async (req, res) => {
 
     if (storedData.expiresAt < Date.now()) {
       delete passwordResetStore[emailOrPhone];
-      return res.status(400).json({
-        message: "Session expired. Please request a new OTP"
-      });
+      return res.status(400).json({ message: "Session expired" });
     }
 
     const partner = await Partner.findById(storedData.partnerId);
@@ -666,10 +701,10 @@ const resetPassword = async (req, res) => {
     partner.password = await bcrypt.hash(newPassword, 10);
     await partner.save();
 
-    // Clear OTP data
+    // Clear data
     delete passwordResetStore[emailOrPhone];
 
-    console.log(`✅ Password reset successful for ${emailOrPhone}`);
+    console.log(`✅ Password reset: ${emailOrPhone}`);
 
     res.status(200).json({ message: "Password reset successfully ✅" });
   } catch (error) {
@@ -678,9 +713,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// ==================== CRUD OPERATIONS ====================
-
-// Get All Partners (with optional role filter)
+// ==================== GET ALL PARTNERS ====================
 const getAllPartners = async (req, res) => {
   try {
     const { role } = req.query;
@@ -708,7 +741,7 @@ const getAllPartners = async (req, res) => {
   }
 };
 
-// Get Partner By ID
+// ==================== GET PARTNER BY ID ====================
 const getPartnerById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -731,7 +764,7 @@ const getPartnerById = async (req, res) => {
   }
 };
 
-// Update Partner (for editing profile)
+// ==================== UPDATE PARTNER ====================
 const updatePartner = async (req, res) => {
   try {
     const { id } = req.params;
@@ -741,9 +774,8 @@ const updatePartner = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    // Don't allow password update through this route
     delete updateData.password;
-    delete updateData.role; // Role shouldn't be changed
+    delete updateData.role;
 
     const updatedPartner = await Partner.findByIdAndUpdate(
       id,
@@ -764,7 +796,7 @@ const updatePartner = async (req, res) => {
   }
 };
 
-// Delete Partner
+// ==================== DELETE PARTNER ====================
 const deletePartner = async (req, res) => {
   try {
     const { id } = req.params;
@@ -784,15 +816,15 @@ const deletePartner = async (req, res) => {
   }
 };
 
-// Toggle Partner Status (Admin Approval)
+// ==================== TOGGLE PARTNER STATUS (ADMIN APPROVAL) ====================
 const togglePartnerStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body;
 
     console.log("\n🔄 ===== TOGGLE PARTNER STATUS =====");
-    console.log("📥 Request Params:", req.params);
-    console.log("📥 Request Body:", req.body);
+    console.log("📥 Partner ID:", id);
+    console.log("📥 New Status:", isActive);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid ID" });
@@ -800,9 +832,7 @@ const togglePartnerStatus = async (req, res) => {
 
     if (typeof isActive !== "boolean") {
       return res.status(400).json({ 
-        message: "isActive must be a boolean",
-        received: typeof isActive,
-        value: isActive
+        message: "isActive must be a boolean"
       });
     }
 
@@ -843,7 +873,7 @@ export default {
   verifyRegistrationOTP,
   completePartnerProfile,
   loginPartner,
-  logoutPartner, // ✅ Added
+  logoutPartner,
   forgotPassword,
   verifyResetOTP,
   resetPassword,
