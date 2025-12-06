@@ -1,138 +1,93 @@
-import admin from "../config/firebase.js";
+// ============================================
+// FILE: middlewares/authMiddleware.js (Customer)
+// ============================================
 import jwt from "jsonwebtoken";
 import Customer from "../models/customerModels.js";
 
-// -------------------- Generate Firebase Custom Token --------------------
-export const generateFirebaseToken = async (userId, additionalClaims = {}) => {
-  try {
-    const customToken = await admin.auth().createCustomToken(userId.toString(), additionalClaims);
-    return { customToken };
-  } catch (error) {
-    console.error("❌ Error generating Firebase token:", error);
-    throw new Error("Failed to generate authentication token");
-  }
-};
+// ==================== TOKEN UTILITIES ====================
 
-// -------------------- Generate JWT Tokens (for testing/Postman) --------------------
-export const generateJWTTokens = (userId) => {
-  const accessToken = jwt.sign(
-    { userId: userId.toString() },
-    process.env.JWT_SECRET || "your-secret-key",
-    { expiresIn: "1d" }
-  );
-
-  const refreshToken = jwt.sign(
-    { userId: userId.toString() },
-    process.env.JWT_REFRESH_SECRET || "your-refresh-secret",
-    { expiresIn: "7d" }
-  );
-
+// Generate Access and Refresh Tokens
+export const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
   return { accessToken, refreshToken };
 };
 
-// -------------------- Combined Token Generation --------------------
-export const generateTokens = async (userId, additionalClaims = {}) => {
-  // Generate Firebase custom token
-  const { customToken } = await generateFirebaseToken(userId, additionalClaims);
-  
-  // Generate JWT tokens for testing
-  const { accessToken, refreshToken } = generateJWTTokens(userId);
-  
-  return { customToken, accessToken, refreshToken };
+// Generate Tokens and Save Refresh Token to Database
+export const generateAndSaveTokens = async (userId) => {
+  const { accessToken, refreshToken } = generateTokens(userId);
+  await Customer.findByIdAndUpdate(userId, { refreshToken });
+  return { accessToken, refreshToken };
 };
 
-// -------------------- Verify Access Token (Supports both Firebase ID Token and JWT) --------------------
+// ==================== MIDDLEWARE ====================
+
+// Verify Access Token
 export const verifyAccessToken = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    const firebaseToken = req.headers["x-firebase-token"];
+    const token = req.headers.authorization?.split(" ")[1];
     
-    let token = firebaseToken;
-    if (!token && authHeader?.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
-    }
-
     if (!token) {
       return res.status(401).json({ message: "Access token required" });
     }
 
-    let userId;
-
-    // Try JWT verification first (for Postman testing)
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
-      userId = decoded.userId;
-      console.log("✅ JWT token verified for user:", userId);
-    } catch (jwtError) {
-      // If JWT fails, try Firebase ID token
-      try {
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        userId = decodedToken.uid;
-        console.log("✅ Firebase ID token verified for user:", userId);
-        
-        req.firebaseUser = {
-          uid: decodedToken.uid,
-          email: decodedToken.email,
-          expiryTime: new Date(decodedToken.exp * 1000),
-          issuedAt: new Date(decodedToken.iat * 1000),
-        };
-      } catch (firebaseError) {
-        console.error("❌ Token verification failed:", firebaseError.message);
-        return res.status(401).json({ 
-          message: "Invalid token",
-          hint: "Use the accessToken (JWT) for Postman testing, or idToken (Firebase) from client app"
-        });
-      }
-    }
-
-    // Get user from database
-    const user = await Customer.findById(userId);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const user = await Customer.findById(decoded.userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    req.userId = userId;
+    req.userId = decoded.userId;
     req.user = user;
     next();
-  } catch (error) {
-    console.error("❌ Token verification error:", error.message);
-    return res.status(401).json({ message: "Invalid access token", error: error.message });
+  } catch (err) {
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
-// -------------------- Refresh Token Handler --------------------
+// ==================== ROUTE HANDLERS ====================
+
+// Logout Customer
+export const logout = async (req, res) => {
+  try {
+    await Customer.findByIdAndUpdate(req.userId, { refreshToken: null });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Logout failed", error: err.message });
+  }
+};
+
+// Refresh Access Token
 export const refreshAccessToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-
+    
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token required" });
     }
 
-    // Verify JWT refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || "your-refresh-secret");
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     
     const user = await Customer.findById(decoded.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).json({ message: "Invalid refresh token" });
     }
 
-    // Generate new tokens
-    const tokens = await generateTokens(user._id, {
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-    });
-
-    res.status(200).json({
-      message: "Token refreshed successfully",
-      ...tokens,
-    });
-  } catch (error) {
-    console.error("❌ Token refresh error:", error);
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
     
-    if (error.name === "TokenExpiredError") {
+    // Update refresh token in database
+    await Customer.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
+
+    res.status(200).json({ 
+      message: "Token refreshed successfully",
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
+    });
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Refresh token expired, please login again" });
     }
-    return res.status(401).json({ message: "Invalid refresh token", error: error.message });
+    res.status(401).json({ message: "Token invalid or expired", error: err.message });
   }
 };

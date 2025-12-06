@@ -438,21 +438,16 @@ const completePartnerProfile = async (req, res) => {
   }
 };
 
-// ==================== LOGIN ====================
+// ==================== LOGIN (EMAIL ONLY) ====================
 const loginPartner = async (req, res) => {
   try {
-    const { emailOrPhone, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!emailOrPhone || !password) {
-      return res.status(400).json({ message: "Email/Phone and password are required" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const partner = await Partner.findOne({
-      $or: [
-        { email: emailOrPhone.toLowerCase() },
-        { phoneNumber: emailOrPhone }
-      ]
-    });
+    const partner = await Partner.findOne({ email: email.toLowerCase() });
 
     if (!partner) {
       return res.status(404).json({ message: "Partner not found" });

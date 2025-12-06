@@ -4,8 +4,7 @@ import OTP from "../../models/otpModels.js";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import twilio from "twilio";
-import admin from "../../config/firebase.js";
-import { generateTokens } from "../../middlewares/authMiddleware.js";
+import { generateAndSaveTokens } from "../../middlewares/authMiddleware.js";
 
 // -------------------- Twilio Setup (Lazy Initialization) --------------------
 let twilioClient = null;
@@ -248,31 +247,7 @@ const verifyRegistrationOTP = async (req, res) => {
     });
 
     // Generate JWT tokens (accessToken & refreshToken only)
-    const { accessToken, refreshToken } = await generateTokens(newUser._id, {
-      email: newUser.email,
-      phoneNumber: newUser.phoneNumber,
-    });
-
-    // Also create/update Firebase user (optional but recommended)
-    try {
-      await admin.auth().createUser({
-        uid: newUser._id.toString(),
-        email: newUser.email,
-        phoneNumber: formatPhoneNumber(phoneNumber),
-        displayName: newUser.fullName,
-      });
-      console.log(`✅ Firebase user created: ${newUser._id}`);
-    } catch (firebaseError) {
-      if (firebaseError.code === 'auth/uid-already-exists') {
-        await admin.auth().updateUser(newUser._id.toString(), {
-          email: newUser.email,
-          displayName: newUser.fullName,
-        });
-        console.log(`✅ Firebase user updated: ${newUser._id}`);
-      } else {
-        console.warn(`⚠️ Firebase user creation warning:`, firebaseError.message);
-      }
-    }
+    const { accessToken, refreshToken } = await generateAndSaveTokens(newUser._id);
 
     // Clean up
     await OTP.deleteMany({ email: registrationData.email });
@@ -298,22 +273,17 @@ const verifyRegistrationOTP = async (req, res) => {
   }
 };
 
-// -------------------- Login User --------------------
+// -------------------- Login User (EMAIL ONLY) --------------------
 const loginUser = async (req, res) => {
   try {
-    const { emailOrPhone, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!emailOrPhone || !password) {
-      return res.status(400).json({ message: "Email/Phone and password are required" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
-    // Find user
-    const user = await Customer.findOne({
-      $or: [
-        { email: emailOrPhone.toLowerCase() },
-        { phoneNumber: emailOrPhone }
-      ],
-    });
+    // Find user by email only
+    const user = await Customer.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -330,10 +300,7 @@ const loginUser = async (req, res) => {
     }
 
     // Generate JWT tokens (accessToken & refreshToken only)
-    const { accessToken, refreshToken } = await generateTokens(user._id, {
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-    });
+    const { accessToken, refreshToken } = await generateAndSaveTokens(user._id);
 
     res.status(200).json({
       message: "Login successful ✅",
@@ -350,6 +317,17 @@ const loginUser = async (req, res) => {
   } catch (error) {
     console.error("❌ Login error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// -------------------- Logout User --------------------
+const logout = async (req, res) => {
+  try {
+    await Customer.findByIdAndUpdate(req.userId, { refreshToken: null });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+    res.status(500).json({ message: "Logout failed", error: error.message });
   }
 };
 
@@ -610,16 +588,6 @@ const updateProfile = async (req, res) => {
     user.phoneNumber = phoneNumber ?? user.phoneNumber;
     await user.save();
 
-    // Update Firebase user if email or name changed
-    try {
-      await admin.auth().updateUser(userId, {
-        email: user.email,
-        displayName: user.fullName,
-      });
-    } catch (firebaseError) {
-      console.warn("⚠️ Could not update Firebase user:", firebaseError.message);
-    }
-
     let address = await Address.findOne({ userId });
     if (address) {
       address.street = street ?? address.street;
@@ -665,14 +633,6 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Delete from Firebase
-    try {
-      await admin.auth().deleteUser(req.params.id);
-      console.log(`✅ Firebase user deleted: ${req.params.id}`);
-    } catch (firebaseError) {
-      console.warn("⚠️ Could not delete Firebase user:", firebaseError.message);
-    }
-
     await Address.deleteMany({ userId: req.params.id });
 
     res.status(200).json({ message: "User deleted successfully ✅" });
@@ -686,6 +646,7 @@ export default {
   registerUser,
   verifyRegistrationOTP,
   loginUser,
+  logout,
   forgotPassword,
   verifyResetOTP,
   resetPassword,

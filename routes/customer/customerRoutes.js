@@ -1,6 +1,9 @@
+// ============================================
+// FILE: routes/CustomerRoutes/customerRoutes.js
+// ============================================
 import express from "express";
 import CustomerControllers from "../../controllers/customer/CustomerControllers.js";
-import { verifyAccessToken, refreshAccessToken } from "../../middlewares/authMiddleware.js";
+import { verifyAccessToken, refreshAccessToken, logout } from "../../middlewares/authMiddleware.js";
 import twilio from "twilio";
 
 const router = express.Router();
@@ -59,21 +62,28 @@ router.post("/test-sms", async (req, res) => {
   }
 });
 
-// -------------------- Authentication Routes --------------------
-router.post("/registerUser", CustomerControllers.registerUser);
-router.post("/verifyOTP", CustomerControllers.verifyRegistrationOTP);
-router.post("/login", CustomerControllers.loginUser);
-router.post("/refreshToken", refreshAccessToken);
+// ==================== PUBLIC ROUTES (No Auth Required) ====================
 
-// -------------------- Forgot & Reset Password (3 Steps) --------------------
-router.post("/forgotPassword", CustomerControllers.forgotPassword);           // Step 1: Send OTP
-router.post("/verifyResetOTP", CustomerControllers.verifyResetOTP);          // Step 2: Verify OTP
-router.post("/resetPassword", CustomerControllers.resetPassword);            // Step 3: Reset Password
+// Authentication
+router.post("/registerUser", CustomerControllers.registerUser);           // Step 1: Send OTP
+router.post("/verifyOTP", CustomerControllers.verifyRegistrationOTP);     // Step 2: Verify OTP & Create Account
+router.post("/login", CustomerControllers.loginUser);                     // Login
+router.post("/refreshToken", refreshAccessToken);                         // Refresh token
 
-// -------------------- Protected Routes (Need Access Token) --------------------
-router.get("/getAllUsers", verifyAccessToken, CustomerControllers.getAllUsers);
+// Forgot & Reset Password (3 Steps)
+router.post("/forgotPassword", CustomerControllers.forgotPassword);       // Step 1: Send OTP
+router.post("/verifyResetOTP", CustomerControllers.verifyResetOTP);       // Step 2: Verify OTP
+router.post("/resetPassword", CustomerControllers.resetPassword);         // Step 3: Reset Password
+
+// ==================== PROTECTED ROUTES (Auth Required) ====================
+
+// Profile & Authentication
+router.post("/logout", verifyAccessToken, logout);                        // ✅ Logout (clear refresh token)
 router.get("/getUserById/:id", verifyAccessToken, CustomerControllers.getUserById);
 router.put("/updateProfile/:id", verifyAccessToken, CustomerControllers.updateProfile);
 router.delete("/deleteUser/:id", verifyAccessToken, CustomerControllers.deleteUser);
+
+// Admin Only
+router.get("/getAllUsers", verifyAccessToken, CustomerControllers.getAllUsers);
 
 export default router;

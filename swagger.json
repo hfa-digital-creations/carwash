@@ -235,95 +235,145 @@
       }
     },
     "/customer/login": {
-      "post": {
-        "tags": [
-          "Customer"
-        ],
-        "summary": "Customer login",
-        "description": "Login with email or phone. Returns accessToken and refreshToken (NO customToken)",
-        "requestBody": {
-          "required": true,
+    "post": {
+      "tags": [
+        "Customer"
+      ],
+      "summary": "Customer login (email only)",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "email",
+                "password"
+              ],
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "example": "john@example.com"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "password123"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Login successful",
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "emailOrPhone",
-                  "password"
-                ],
                 "properties": {
-                  "emailOrPhone": {
+                  "message": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "Login successful ✅"
                   },
-                  "password": {
-                    "type": "string",
-                    "example": "password123"
+                  "user": {
+                    "type": "object"
+                  },
+                  "accessToken": {
+                    "type": "string"
+                  },
+                  "refreshToken": {
+                    "type": "string"
                   }
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Login successful ✅"
-                    },
-                    "user": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "692fe5d13778bddc8364a45d"
-                        },
-                        "fullName": {
-                          "type": "string",
-                          "example": "John Doe"
-                        },
-                        "email": {
-                          "type": "string",
-                          "example": "john@example.com"
-                        },
-                        "phoneNumber": {
-                          "type": "string",
-                          "example": "+917397695334"
-                        },
-                        "referralCode": {
-                          "type": "string",
-                          "example": "JOHN123"
-                        }
-                      }
-                    },
-                    "accessToken": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    },
-                    "refreshToken": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Incorrect password"
-          },
-          "404": {
-            "description": "User not found"
           }
         }
       }
-    },
+    }
+  },
+  "/customer/logout": {
+    "post": {
+      "tags": [
+        "Customer"
+      ],
+      "summary": "Logout customer",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Logout successful",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Logged out successfully"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/customer/refreshToken": {
+    "post": {
+      "tags": [
+        "Customer"
+      ],
+      "summary": "Refresh access token",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "refreshToken"
+              ],
+              "properties": {
+                "refreshToken": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Token refreshed successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Token refreshed successfully"
+                  },
+                  "accessToken": {
+                    "type": "string"
+                  },
+                  "refreshToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
     "/customer/forgotPassword": {
       "post": {
         "tags": [
@@ -1669,106 +1719,111 @@
       }
     },
     "/partner/login": {
-      "post": {
-        "tags": [
-          "Partner"
-        ],
-        "summary": "Partner login",
-        "description": "Login with email or phone. Returns accessToken and refreshToken (NO customToken)",
-        "requestBody": {
-          "required": true,
+    "post": {
+      "tags": [
+        "Partner"
+      ],
+      "summary": "Partner login - EMAIL ONLY",
+      "description": "Login with email and password (NO phone number)",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "email",
+                "password"
+              ],
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "example": "alex@example.com",
+                  "description": "Partner email address"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "password123",
+                  "description": "Partner password"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Login successful",
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "emailOrPhone",
-                  "password"
-                ],
                 "properties": {
-                  "emailOrPhone": {
+                  "message": {
                     "type": "string",
-                    "example": "alex@example.com"
+                    "example": "Login successful ✅"
                   },
-                  "password": {
+                  "partner": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "692ff8696496b01c810ffd89"
+                      },
+                      "fullName": {
+                        "type": "string",
+                        "example": "Anand Kumar"
+                      },
+                      "email": {
+                        "type": "string",
+                        "example": "anand@example.com"
+                      },
+                      "phoneNumber": {
+                        "type": "string",
+                        "example": "+917397695334"
+                      },
+                      "role": {
+                        "type": "string",
+                        "example": "Product Seller"
+                      },
+                      "referralCode": {
+                        "type": "string",
+                        "example": "ANAND123"
+                      },
+                      "isActive": {
+                        "type": "boolean",
+                        "example": true
+                      }
+                    }
+                  },
+                  "accessToken": {
                     "type": "string",
-                    "example": "password123"
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "description": "JWT access token - valid for 1 day"
+                  },
+                  "refreshToken": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "description": "JWT refresh token - valid for 7 days"
                   }
                 }
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Login successful ✅"
-                    },
-                    "partner": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "692ff8696496b01c810ffd89"
-                        },
-                        "fullName": {
-                          "type": "string",
-                          "example": "Anand Kumar"
-                        },
-                        "email": {
-                          "type": "string",
-                          "example": "anand@example.com"
-                        },
-                        "phoneNumber": {
-                          "type": "string",
-                          "example": "+917397695334"
-                        },
-                        "role": {
-                          "type": "string",
-                          "example": "Product Seller"
-                        },
-                        "referralCode": {
-                          "type": "string",
-                          "example": "ANAND123"
-                        },
-                        "isActive": {
-                          "type": "boolean",
-                          "example": true
-                        }
-                      }
-                    },
-                    "accessToken": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    },
-                    "refreshToken": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Incorrect password"
-          },
-          "403": {
-            "description": "Account not verified or not activated by admin"
-          },
-          "404": {
-            "description": "Partner not found"
-          }
+        "400": {
+          "description": "Email/password required or incorrect password"
+        },
+        "403": {
+          "description": "Account not verified or not activated by admin"
+        },
+        "404": {
+          "description": "Partner not found"
         }
       }
-    },
+    }
+  },
     "/partner/logout": {
       "post": {
         "tags": [
@@ -2300,226 +2355,659 @@
         }
       }
     },
-    "/booking/create": {
-      "post": {
-        "tags": [
-          "Booking"
-        ],
-        "summary": "Create new booking (Customer)",
-        "description": "Customer creates a car/bike wash booking. Status will be 'Pending' waiting for admin approval.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
+     "/booking/services": {
+    "get": {
+      "tags": [
+        "Booking"
+      ],
+      "summary": "Get available services (Public)",
+      "description": "Get Car Wash or Bike Wash services created by admin",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "serviceType",
+          "in": "query",
           "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "Car Wash",
+              "Bike Wash"
+            ],
+            "example": "Car Wash"
+          },
+          "description": "Type of service"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Services fetched successfully",
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "customerId",
-                  "serviceType",
-                  "vehicleType",
-                  "package",
-                  "address",
-                  "scheduledDate",
-                  "scheduledTime",
-                  "paymentMethod",
-                  "subtotal",
-                  "total"
-                ],
                 "properties": {
-                  "customerId": {
+                  "message": {
                     "type": "string",
-                    "example": "64abc123def456..."
+                    "example": "Car Wash services fetched"
                   },
                   "serviceType": {
                     "type": "string",
-                    "enum": [
-                      "Car Wash",
-                      "Bike Wash"
-                    ],
                     "example": "Car Wash"
                   },
-                  "vehicleType": {
-                    "type": "string",
-                    "enum": [
-                      "Car",
-                      "Bike"
-                    ],
-                    "example": "Car"
-                  },
-                  "vehicleModel": {
-                    "type": "string",
-                    "example": "Honda City"
-                  },
-                  "vehicleNumber": {
-                    "type": "string",
-                    "example": "TN01AB1234"
-                  },
-                  "package": {
-                    "type": "object",
-                    "properties": {
-                      "packageType": {
-                        "type": "string",
-                        "example": "Premium Wash"
-                      },
-                      "services": {
-                        "type": "array",
-                        "items": {
+                  "services": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
                           "type": "string"
                         },
-                        "example": [
-                          "Complete washing",
-                          "Dashboard cleaning",
-                          "Tire dressing"
-                        ]
-                      },
-                      "price": {
-                        "type": "number",
-                        "example": 500
-                      },
-                      "expressEnabled": {
-                        "type": "boolean",
-                        "example": true
+                        "serviceName": {
+                          "type": "string",
+                          "example": "Standard Car Wash"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "features": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "duration": {
+                          "type": "number",
+                          "example": 30
+                        },
+                        "price": {
+                          "type": "number",
+                          "example": 25
+                        },
+                        "expressServiceAvailable": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "expressFee": {
+                          "type": "number",
+                          "example": 5
+                        }
                       }
                     }
                   },
-                  "address": {
+                  "count": {
+                    "type": "number",
+                    "example": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/booking/calculate-cost": {
+    "post": {
+      "tags": [
+        "Booking"
+      ],
+      "summary": "Calculate booking cost",
+      "description": "Calculate total cost with express service and coupon before creating booking",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "serviceId"
+              ],
+              "properties": {
+                "serviceId": {
+                  "type": "string",
+                  "example": "64abc123def456...",
+                  "description": "Service ID from GET /booking/services"
+                },
+                "expressService": {
+                  "type": "boolean",
+                  "example": true,
+                  "description": "Enable express service"
+                },
+                "couponCode": {
+                  "type": "string",
+                  "example": "SAVE20",
+                  "description": "Optional coupon code"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Cost calculated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Cost calculated"
+                  },
+                  "service": {
                     "type": "object",
                     "properties": {
-                      "street": {
-                        "type": "string",
-                        "example": "123 Main Street"
+                      "id": {
+                        "type": "string"
                       },
-                      "unit": {
+                      "name": {
                         "type": "string",
-                        "example": "Apt 5B"
+                        "example": "Standard Car Wash"
                       },
-                      "city": {
+                      "type": {
                         "type": "string",
-                        "example": "Chennai"
+                        "example": "Car Wash"
                       },
-                      "pincode": {
+                      "price": {
+                        "type": "number",
+                        "example": 25
+                      }
+                    }
+                  },
+                  "pricing": {
+                    "type": "object",
+                    "properties": {
+                      "subtotal": {
+                        "type": "number",
+                        "example": 25
+                      },
+                      "expressFee": {
+                        "type": "number",
+                        "example": 5
+                      },
+                      "discount": {
+                        "type": "number",
+                        "example": 5
+                      },
+                      "total": {
+                        "type": "number",
+                        "example": 25
+                      },
+                      "advancePaymentRequired": {
+                        "type": "number",
+                        "example": 8,
+                        "description": "30% of total"
+                      },
+                      "balancePayment": {
+                        "type": "number",
+                        "example": 17,
+                        "description": "Pay after service"
+                      }
+                    }
+                  },
+                  "expressService": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "showDateTime": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Show date/time picker in UI"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/booking/create": {
+    "post": {
+      "tags": [
+        "Booking"
+      ],
+      "summary": "Create booking (WITHOUT payment)",
+      "description": "Create booking first, payment separate. Status will be 'Payment Pending'",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "customerId",
+                "serviceId",
+                "vehicleType",
+                "address"
+              ],
+              "properties": {
+                "customerId": {
+                  "type": "string",
+                  "example": "64cust..."
+                },
+                "serviceId": {
+                  "type": "string",
+                  "example": "64serv..."
+                },
+                "vehicleType": {
+                  "type": "string",
+                  "enum": [
+                    "Car",
+                    "Bike"
+                  ],
+                  "example": "Car"
+                },
+                "vehicleModel": {
+                  "type": "string",
+                  "example": "Honda City"
+                },
+                "vehicleNumber": {
+                  "type": "string",
+                  "example": "TN01AB1234"
+                },
+                "address": {
+                  "type": "object",
+                  "properties": {
+                    "street": {
+                      "type": "string",
+                      "example": "123 Main St"
+                    },
+                    "city": {
+                      "type": "string",
+                      "example": "Chennai"
+                    },
+                    "pincode": {
+                      "type": "string",
+                      "example": "600001"
+                    }
+                  }
+                },
+                "expressService": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "scheduledDate": {
+                  "type": "string",
+                  "format": "date",
+                  "example": "2025-06-15"
+                },
+                "scheduledTime": {
+                  "type": "string",
+                  "example": "10:00 AM"
+                },
+                "timeSlot": {
+                  "type": "string",
+                  "enum": [
+                    "Morning",
+                    "Afternoon",
+                    "Evening"
+                  ]
+                },
+                "couponCode": {
+                  "type": "string",
+                  "example": "SAVE20"
+                },
+                "specialInstructions": {
+                  "type": "string",
+                  "example": "Call before arriving"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Booking created - Payment pending",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Booking created! Please complete advance payment."
+                  },
+                  "booking": {
+                    "type": "object",
+                    "properties": {
+                      "bookingId": {
                         "type": "string",
-                        "example": "600001"
+                        "example": "#123456"
                       },
-                      "location": {
+                      "_id": {
+                        "type": "string",
+                        "example": "64book..."
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "Payment Pending"
+                      },
+                      "pricing": {
                         "type": "object",
                         "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": [
-                              "Point"
-                            ],
-                            "example": "Point"
+                          "subtotal": {
+                            "type": "number",
+                            "example": 25
                           },
-                          "coordinates": {
-                            "type": "array",
-                            "items": {
-                              "type": "number"
-                            },
-                            "example": [
-                              80.2707,
-                              13.0827
-                            ]
+                          "expressFee": {
+                            "type": "number",
+                            "example": 5
+                          },
+                          "discount": {
+                            "type": "number",
+                            "example": 5
+                          },
+                          "total": {
+                            "type": "number",
+                            "example": 25
+                          },
+                          "advanceRequired": {
+                            "type": "number",
+                            "example": 8,
+                            "description": "30% advance"
+                          },
+                          "balanceDue": {
+                            "type": "number",
+                            "example": 17
                           }
                         }
                       }
                     }
                   },
-                  "scheduledDate": {
+                  "nextStep": {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "example": "Make advance payment"
+                      },
+                      "endpoint": {
+                        "type": "string",
+                        "example": "/api/booking/64book.../pay-advance"
+                      },
+                      "amount": {
+                        "type": "number",
+                        "example": 8
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/booking/{id}/pay-advance": {
+    "post": {
+      "tags": [
+        "Booking"
+      ],
+      "summary": "Make advance payment (30%)",
+      "description": "Pay advance after creating booking. Updates status to 'Pending' for admin approval",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Booking ID from create booking response"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "paymentMethod",
+                "advancePayment"
+              ],
+              "properties": {
+                "paymentMethod": {
+                  "type": "string",
+                  "enum": [
+                    "UPI",
+                    "Debit Card",
+                    "Credit Card",
+                    "Net Banking",
+                    "Wallet Balance"
+                  ],
+                  "example": "UPI"
+                },
+                "advancePayment": {
+                  "type": "number",
+                  "example": 8,
+                  "description": "Minimum 30% of total (from previous response)"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "example": "TXN123456789",
+                  "description": "Payment gateway transaction ID"
+                },
+                "paymentGatewayResponse": {
+                  "type": "object",
+                  "description": "Full payment gateway response (optional)"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Advance payment successful",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
                     "type": "string",
-                    "format": "date",
-                    "example": "2025-06-15"
+                    "example": "Advance payment successful! ✅"
                   },
-                  "scheduledTime": {
+                  "booking": {
+                    "type": "object",
+                    "properties": {
+                      "bookingId": {
+                        "type": "string",
+                        "example": "#123456"
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "Pending"
+                      },
+                      "paymentStatus": {
+                        "type": "string",
+                        "example": "Partially Paid"
+                      },
+                      "pricing": {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "number",
+                            "example": 25
+                          },
+                          "advancePaid": {
+                            "type": "number",
+                            "example": 8
+                          },
+                          "balanceDue": {
+                            "type": "number",
+                            "example": 17
+                          }
+                        }
+                      },
+                      "paymentMethod": {
+                        "type": "string",
+                        "example": "UPI"
+                      },
+                      "transactionId": {
+                        "type": "string",
+                        "example": "TXN123456789"
+                      }
+                    }
+                  },
+                  "note": {
                     "type": "string",
-                    "example": "10:00 AM"
-                  },
-                  "timeSlot": {
-                    "type": "string",
-                    "enum": [
-                      "Morning",
-                      "Afternoon",
-                      "Evening"
-                    ],
-                    "example": "Morning"
-                  },
-                  "paymentMethod": {
-                    "type": "string",
-                    "enum": [
-                      "UPI",
-                      "Debit Card",
-                      "Credit Card",
-                      "Net Banking",
-                      "Wallet Balance"
-                    ],
-                    "example": "UPI"
-                  },
-                  "subtotal": {
-                    "type": "number",
-                    "example": 500
-                  },
-                  "expressFee": {
-                    "type": "number",
-                    "example": 50
-                  },
-                  "discount": {
-                    "type": "number",
-                    "example": 0
-                  },
-                  "couponCode": {
-                    "type": "string",
-                    "example": "SAVE20"
-                  },
-                  "total": {
-                    "type": "number",
-                    "example": 550
-                  },
-                  "advancePayment": {
-                    "type": "number",
-                    "example": 0
-                  },
-                  "specialInstructions": {
-                    "type": "string",
-                    "example": "Please call before arriving"
+                    "example": "Your booking is now pending admin approval"
                   }
                 }
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "Booking created successfully (Pending admin approval)",
-            "content": {
-              "application/json": {
-                "schema": {
+        "400": {
+          "description": "Invalid payment amount or already paid"
+        },
+        "404": {
+          "description": "Booking not found"
+        }
+      }
+    }
+  },
+  "/booking/{id}/pay-balance": {
+    "post": {
+      "tags": [
+        "Booking"
+      ],
+      "summary": "Make balance payment (after service)",
+      "description": "Pay remaining balance after service completion",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Booking ID"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "paymentMethod",
+                "balancePayment"
+              ],
+              "properties": {
+                "paymentMethod": {
+                  "type": "string",
+                  "enum": [
+                    "UPI",
+                    "Cash",
+                    "Debit Card",
+                    "Credit Card",
+                    "Net Banking"
+                  ],
+                  "example": "Cash"
+                },
+                "balancePayment": {
+                  "type": "number",
+                  "example": 17,
+                  "description": "Remaining 70% after advance"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "example": "TXN987654321",
+                  "description": "Payment gateway transaction ID (if applicable)"
+                },
+                "paymentGatewayResponse": {
                   "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    },
-                    "booking": {
-                      "type": "object"
+                  "description": "Full payment gateway response (optional)"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Balance payment successful",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Balance payment successful! ✅"
+                  },
+                  "booking": {
+                    "type": "object",
+                    "properties": {
+                      "bookingId": {
+                        "type": "string",
+                        "example": "#123456"
+                      },
+                      "paymentStatus": {
+                        "type": "string",
+                        "example": "Fully Paid"
+                      },
+                      "totalPaid": {
+                        "type": "number",
+                        "example": 25
+                      },
+                      "balanceDue": {
+                        "type": "number",
+                        "example": 0
+                      }
                     }
+                  },
+                  "note": {
+                    "type": "string",
+                    "example": "Thank you! Please rate your experience."
                   }
                 }
               }
             }
-          },
-          "400": {
-            "description": "Validation error"
-          },
-          "401": {
-            "description": "Unauthorized"
           }
+        },
+        "400": {
+          "description": "Service not completed or already paid"
+        },
+        "404": {
+          "description": "Booking not found"
         }
       }
-    },
+    }
+  },
     "/booking/my-bookings": {
       "get": {
         "tags": [
@@ -5452,7 +5940,625 @@
           }
         }
       }
+    },
+    "/admin/services/create": {
+    "post": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Create new service (Admin only)",
+      "description": "Admin creates a new Car Wash or Bike Wash service with pricing and features",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "serviceType",
+                "serviceName",
+                "description",
+                "duration",
+                "price"
+              ],
+              "properties": {
+                "serviceType": {
+                  "type": "string",
+                  "enum": [
+                    "Car Wash",
+                    "Bike Wash"
+                  ],
+                  "example": "Car Wash",
+                  "description": "Type of service"
+                },
+                "serviceName": {
+                  "type": "string",
+                  "example": "Standard Car Wash",
+                  "description": "Name of the service package"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Exterior wash with interior vacuum",
+                  "description": "Service description"
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "Exterior soap wash",
+                    "Interior vacuum",
+                    "Dashboard cleaning",
+                    "Window cleaning"
+                  ],
+                  "description": "List of features included"
+                },
+                "duration": {
+                  "type": "number",
+                  "example": 30,
+                  "description": "Service duration in minutes"
+                },
+                "price": {
+                  "type": "number",
+                  "example": 25,
+                  "description": "Service price in dollars/rupees"
+                },
+                "expressServiceAvailable": {
+                  "type": "boolean",
+                  "example": true,
+                  "default": true,
+                  "description": "Whether express service is available"
+                },
+                "expressFee": {
+                  "type": "number",
+                  "example": 5,
+                  "default": 0,
+                  "description": "Additional fee for express service"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Service created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Service created successfully ✅"
+                  },
+                  "service": {
+                    "type": "object",
+                    "properties": {
+                      "_id": {
+                        "type": "string",
+                        "example": "64abc123def456..."
+                      },
+                      "serviceType": {
+                        "type": "string",
+                        "example": "Car Wash"
+                      },
+                      "serviceName": {
+                        "type": "string",
+                        "example": "Standard Car Wash"
+                      },
+                      "description": {
+                        "type": "string",
+                        "example": "Exterior wash with interior vacuum"
+                      },
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "duration": {
+                        "type": "number",
+                        "example": 30
+                      },
+                      "price": {
+                        "type": "number",
+                        "example": 25
+                      },
+                      "expressServiceAvailable": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "expressFee": {
+                        "type": "number",
+                        "example": 5
+                      },
+                      "isActive": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "createdBy": {
+                        "type": "string",
+                        "example": "64admin..."
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Validation error or service already exists",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Standard Car Wash already exists for Car Wash"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Admin token required"
+        }
+      }
     }
+  },
+  "/admin/services/all": {
+    "get": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Get all services (Admin only)",
+      "description": "Admin gets all services with optional filters",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "serviceType",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "Car Wash",
+              "Bike Wash"
+            ]
+          },
+          "description": "Filter by service type"
+        },
+        {
+          "name": "isActive",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "description": "Filter by active status (true/false)"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Services fetched successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Services fetched successfully"
+                  },
+                  "count": {
+                    "type": "number",
+                    "example": 5
+                  },
+                  "services": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string"
+                        },
+                        "serviceType": {
+                          "type": "string",
+                          "example": "Car Wash"
+                        },
+                        "serviceName": {
+                          "type": "string",
+                          "example": "Basic Car Wash"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "features": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "duration": {
+                          "type": "number",
+                          "example": 20
+                        },
+                        "price": {
+                          "type": "number",
+                          "example": 15
+                        },
+                        "expressServiceAvailable": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "expressFee": {
+                          "type": "number",
+                          "example": 5
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/admin/services/type/{serviceType}": {
+    "get": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Get services by type (Public)",
+      "description": "Get all active services of a specific type - No authentication required",
+      "parameters": [
+        {
+          "name": "serviceType",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "Car Wash",
+              "Bike Wash"
+            ]
+          },
+          "description": "Service type to fetch"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Services fetched successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Car Wash services fetched"
+                  },
+                  "count": {
+                    "type": "number",
+                    "example": 3
+                  },
+                  "services": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid service type"
+        }
+      }
+    }
+  },
+  "/admin/services/{id}": {
+    "get": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Get service by ID",
+      "description": "Get details of a specific service",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Service ID"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Service fetched successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Service fetched successfully"
+                  },
+                  "service": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Service not found"
+        }
+      }
+    }
+  },
+  "/admin/services/{id}/update": {
+    "put": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Update service (Admin only)",
+      "description": "Admin updates service details like price, duration, features",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Service ID to update"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "serviceName": {
+                  "type": "string",
+                  "example": "Premium Car Wash"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Complete interior & exterior detailing"
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "All standard features",
+                    "Waxing & polishing",
+                    "Tire dressing"
+                  ]
+                },
+                "duration": {
+                  "type": "number",
+                  "example": 60
+                },
+                "price": {
+                  "type": "number",
+                  "example": 45
+                },
+                "expressServiceAvailable": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "expressFee": {
+                  "type": "number",
+                  "example": 10
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Service updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Service updated successfully ✅"
+                  },
+                  "service": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Service not found"
+        }
+      }
+    }
+  },
+  "/admin/services/{id}/toggle-status": {
+    "put": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Toggle service status (Admin only)",
+      "description": "Admin activates or deactivates a service",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Service ID"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "isActive"
+              ],
+              "properties": {
+                "isActive": {
+                  "type": "boolean",
+                  "example": false,
+                  "description": "true to activate, false to deactivate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Service status toggled successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Service deactivated successfully ✅"
+                  },
+                  "service": {
+                    "type": "object",
+                    "properties": {
+                      "_id": {
+                        "type": "string"
+                      },
+                      "serviceName": {
+                        "type": "string",
+                        "example": "Basic Car Wash"
+                      },
+                      "isActive": {
+                        "type": "boolean",
+                        "example": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "isActive must be boolean"
+        },
+        "404": {
+          "description": "Service not found"
+        }
+      }
+    }
+  },
+  "/admin/services/{id}/delete": {
+    "delete": {
+      "tags": [
+        "Admin - Service Management"
+      ],
+      "summary": "Delete service (Admin only)",
+      "description": "Admin permanently deletes a service",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Service ID to delete"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Service deleted successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "Service deleted successfully ✅"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Service not found"
+        }
+      }
+    }
+  }
+    
   },
   "components": {
     "securitySchemes": {

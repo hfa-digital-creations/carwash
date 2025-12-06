@@ -20,6 +20,7 @@ import partnerFeatureRouters from "./routes/partner/partnerFeatureRoutes.js";
 // Admin
 import adminRegistration from "./routes/AdminRoutes/adminRegistrationRoutes.js";
 import otp from "./routes/AdminRoutes/passwordResetRoutes.js";
+import adminService from "./routes/AdminRoutes/adminServiceRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -101,6 +102,7 @@ app.use("/partner-features", partnerFeatureRouters);
 // Admin
 app.use("/admin", adminRegistration);
 app.use("/admin", otp);
+app.use("/admin", adminService);
 
 // MongoDB connect
 mongoose

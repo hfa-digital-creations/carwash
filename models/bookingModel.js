@@ -86,7 +86,7 @@ const bookingSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     enum: ["UPI", "Debit Card", "Credit Card", "Net Banking", "Wallet Balance"],
-    required: true
+    required: false
   },
   paymentStatus: {
     type: String,
