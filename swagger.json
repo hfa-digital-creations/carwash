@@ -758,11 +758,11 @@
                   "email": {
                     "type": "string",
                     "format": "email",
-                    "example": "admin@example.com"
+                    "example": "superadmin@example.com"
                   },
                   "password": {
                     "type": "string",
-                    "example": "admin123"
+                    "example": "SuperAdmin@123"
                   }
                 }
               }

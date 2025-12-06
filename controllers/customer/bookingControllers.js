@@ -721,23 +721,23 @@ const acceptBooking = async (req, res) => {
       return res.status(400).json({ message: "Booking cannot be accepted in current status" });
     }
 
-    // ✅ Partner accepted - now can start working
+    // ✅ Update BOTH status field AND timeline
+    booking.status = "Partner Accepted";  // ✅ ADD THIS
     booking.statusTimeline.push({
       status: "Partner Accepted",
       timestamp: new Date()
     });
-    await booking.save();
 
-    // Notify customer
-    await Notification.create({
-      recipientId: booking.customerId,
-      recipientType: "Customer",
-      type: "Partner Accepted",
-      title: "Booking Accepted",
-      message: `${booking.partnerName} has accepted your booking!`,
-      relatedId: booking.bookingId,
-      relatedType: "Booking",
-      priority: "High"
+    // ✅ Return WITH live location
+    res.status(200).json({
+      booking: {
+        address: booking.address,
+        liveLocation: booking.liveLocation,  // ✅ For navigation!
+        customer: {
+          name: booking.customerName,
+          phone: booking.customerPhone
+        }
+      }
     });
 
     console.log(`✅ Booking accepted by partner: ${booking.partnerName}`);
@@ -859,7 +859,7 @@ const updateBookingStatus = async (req, res) => {
         break;
       case "Completed":
         notificationMessage = "Service completed! Please rate your experience";
-        
+
         // ✅ Create transaction for partner
         await Transaction.create({
           partnerId: booking.partnerId,
@@ -885,7 +885,7 @@ const updateBookingStatus = async (req, res) => {
 
         // Update earnings summary
         await updateEarningsSummary(booking.partnerId, booking.total * 0.85, "Booking");
-        
+
         break;
     }
 
@@ -1111,19 +1111,19 @@ export default {
   makeBalancePayment,
   getMyBookings,
 
-  
+
   // Admin
   getPendingBookings,
   approveBooking,
   assignPartnerToBooking,
   getAllBookings,
-  
+
   // Partner
   acceptBooking,
   declineBooking,
   updateBookingStatus,
   getPartnerScheduledJobs,
-  
+
   // Common
   getBookingById,
   cancelBooking
