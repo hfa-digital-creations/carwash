@@ -10,7 +10,7 @@ import QRCode from "qrcode";
 // ==================== STEP 1: GET AVAILABLE SERVICES ====================
 const getAvailableServices = async (req, res) => {
   try {
-    const { serviceType } = req.query; // "Car Wash" or "Bike Wash"
+    const { serviceType } = req.query;
 
     if (!serviceType || !["Car Wash", "Bike Wash"].includes(serviceType)) {
       return res.status(400).json({ message: "Valid serviceType required" });
@@ -36,11 +36,7 @@ const getAvailableServices = async (req, res) => {
 // ==================== STEP 2: CALCULATE BOOKING COST ====================
 const calculateBookingCost = async (req, res) => {
   try {
-    const {
-      serviceId,
-      expressService,
-      couponCode,
-    } = req.body;
+    const { serviceId, expressService, couponCode } = req.body;
 
     if (!serviceId) {
       return res.status(400).json({ message: "serviceId required" });
@@ -55,12 +51,10 @@ const calculateBookingCost = async (req, res) => {
     let expressFee = 0;
     let discount = 0;
 
-    // Express service fee
     if (expressService && service.expressServiceAvailable) {
       expressFee = service.expressFee || 0;
     }
 
-    // Apply coupon if provided
     if (couponCode) {
       const voucher = await Voucher.findOne({
         code: couponCode,
@@ -89,7 +83,7 @@ const calculateBookingCost = async (req, res) => {
     }
 
     const total = subtotal + expressFee - discount;
-    const advancePaymentRequired = Math.round(total * 0.30); // 30% advance
+    const advancePaymentRequired = Math.round(total * 0.30);
 
     res.status(200).json({
       message: "Cost calculated",
@@ -109,108 +103,75 @@ const calculateBookingCost = async (req, res) => {
         balancePayment: total - advancePaymentRequired,
       },
       expressService: expressService && service.expressServiceAvailable,
-      showDateTime: expressService && service.expressServiceAvailable,
+      showDateTime: !expressService, // ✅ Show date/time when express is FALSE
     });
   } catch (error) {
     console.error("❌ Calculate cost error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-// ==================== STEP 1: CREATE BOOKING (WITHOUT PAYMENT) ====================
+
+// ==================== STEP 3: CREATE BOOKING (UPDATED) ====================
 const createBooking = async (req, res) => {
   try {
     const {
       customerId,
       serviceId,
       vehicleType,
-      vehicleModel,
       vehicleNumber,
       address,
+      liveLocation, // ✅ NEW: Live location
       expressService,
       scheduledDate,
       scheduledTime,
       timeSlot,
-      couponCode,
       specialInstructions,
     } = req.body;
 
-    // Validate required fields
+    // ❌ vehicleModel removed
+
     if (!customerId || !serviceId || !vehicleType || !address) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Get customer
     const customer = await Customer.findById(customerId);
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    // Get service
     const service = await Service.findById(serviceId);
     if (!service || !service.isActive) {
       return res.status(404).json({ message: "Service not found or inactive" });
     }
 
-    // Validate express service
     if (expressService && !service.expressServiceAvailable) {
       return res.status(400).json({
         message: "Express service not available for this package",
       });
     }
 
-    // Validate date/time for express service
-    if (expressService) {
+    // ✅ NEW LOGIC: If express is FALSE, date/time REQUIRED
+    if (!expressService) {
       if (!scheduledDate || !scheduledTime) {
         return res.status(400).json({
-          message: "Date and time required for express service",
+          message: "Date and time required for regular booking",
         });
       }
     }
 
-    // Calculate pricing
+    // ✅ If express is TRUE, date/time OPTIONAL (can skip)
+    // No validation needed - they can provide or not
+
     let subtotal = service.price;
     let expressFee = 0;
-    let discount = 0;
 
     if (expressService && service.expressServiceAvailable) {
       expressFee = service.expressFee || 0;
     }
 
-    // Apply voucher
-    let voucherDoc = null;
-    if (couponCode) {
-      voucherDoc = await Voucher.findOne({
-        code: couponCode,
-        isActive: true,
-        validFrom: { $lte: new Date() },
-        validUntil: { $gte: new Date() },
-      });
+    const total = subtotal + expressFee;
+    const requiredAdvance = Math.round(total * 0.30);
 
-      if (voucherDoc) {
-        if (
-          voucherDoc.applicableFor.includes(service.serviceType) ||
-          voucherDoc.applicableFor.includes("All")
-        ) {
-          if (subtotal >= voucherDoc.minOrderValue) {
-            if (voucherDoc.discountType === "Percentage") {
-              discount = (subtotal * voucherDoc.discountValue) / 100;
-              if (voucherDoc.maxDiscount) {
-                discount = Math.min(discount, voucherDoc.maxDiscount);
-              }
-            } else {
-              discount = voucherDoc.discountValue;
-            }
-            voucherDoc.usedCount += 1;
-            await voucherDoc.save();
-          }
-        }
-      }
-    }
-
-    const total = subtotal + expressFee - discount;
-    const requiredAdvance = Math.round(total * 0.30); // 30% advance
-
-    // Generate QR Code
     const qrData = {
       bookingId: "#" + Math.floor(100000 + Math.random() * 900000),
       customerId,
@@ -222,37 +183,40 @@ const createBooking = async (req, res) => {
     };
     const qrCodeDataURL = await QRCode.toDataURL(JSON.stringify(qrData));
 
-    // ✅ Create booking WITHOUT payment
     const newBooking = await Booking.create({
       customerId,
       customerName: customer.fullName,
       customerPhone: customer.phoneNumber,
+      serviceId: service._id,
       serviceType: service.serviceType,
+      serviceName: service.serviceName,
       vehicleType,
-      vehicleModel,
       vehicleNumber,
+      // ❌ vehicleModel removed
       package: {
         packageType: service.serviceName,
-        services: service.features,
+        services: service.features || [],
         price: service.price,
         expressEnabled: expressService || false,
       },
       address,
-      scheduledDate: scheduledDate || new Date(),
-      scheduledTime: scheduledTime || "10:00 AM",
+      liveLocation: liveLocation || null, // ✅ NEW: Live location
+      expressService: expressService || false,
+      scheduledDate: scheduledDate || null, // ✅ Can be null for express
+      scheduledTime: scheduledTime || null, // ✅ Can be null for express
       timeSlot: timeSlot || null,
-      // ✅ paymentMethod not set - will be set during payment
-      paymentStatus: "Pending", // ✅ Valid enum value
+      paymentStatus: "Pending",
       subtotal,
       expressFee,
-      discount,
-      couponCode: couponCode || null,
+      discount: 0,
+      couponCode: null,
       total,
       advancePayment: 0,
+      balancePayment: total,
       advancePaid: false,
       specialInstructions,
       qrCode: qrCodeDataURL,
-      status: "Pending", // ✅ Valid enum value
+      status: "Pending",
       statusTimeline: [
         {
           status: "Pending",
@@ -261,49 +225,39 @@ const createBooking = async (req, res) => {
       ],
     });
 
-    // Create voucher usage record
-    if (couponCode && voucherDoc) {
-      await VoucherUsage.create({
-        voucherId: voucherDoc._id,
-        voucherCode: couponCode,
-        userId: customerId,
-        orderId: newBooking.bookingId,
-        orderType: "Booking",
-        discountApplied: discount,
-      });
-    }
-
     console.log(`✅ Booking created: ${newBooking.bookingId}`);
-    console.log(`   Status: Pending (Awaiting Payment)`);
-    console.log(`   Total: ₹${total}`);
-    console.log(`   Advance Required: ₹${requiredAdvance}`);
+    console.log(`   Express Service: ${expressService ? "YES (date/time optional)" : "NO (date/time required)"}`);
 
     res.status(201).json({
-      message: "Booking created! Please complete advance payment.",
+      message: "Booking created! Please complete payment.",
       booking: {
         bookingId: newBooking.bookingId,
         _id: newBooking._id,
         serviceType: service.serviceType,
         serviceName: service.serviceName,
         vehicleType: newBooking.vehicleType,
-        vehicleModel: newBooking.vehicleModel,
+        vehicleNumber: newBooking.vehicleNumber,
+        // ❌ vehicleModel removed
+        address: newBooking.address, // ✅ Added
+        liveLocation: newBooking.liveLocation, // ✅ Added
         scheduledDate: newBooking.scheduledDate,
         scheduledTime: newBooking.scheduledTime,
+        expressService: newBooking.expressService, // ✅ Added
         status: newBooking.status,
         paymentStatus: newBooking.paymentStatus,
         pricing: {
           subtotal,
           expressFee,
-          discount,
+          discount: 0,
           total,
-          advanceRequired: requiredAdvance, // ✅ 30% advance
+          advanceRequired: requiredAdvance,
           balanceDue: total - requiredAdvance,
         },
         qrCode: newBooking.qrCode,
         createdAt: newBooking.createdAt,
       },
       nextStep: {
-        action: "Make advance payment",
+        action: "Complete payment",
         endpoint: `/api/booking/${newBooking._id}/pay-advance`,
         amount: requiredAdvance,
       },
@@ -314,15 +268,14 @@ const createBooking = async (req, res) => {
   }
 };
 
-// ==================== STEP 2: MAKE ADVANCE PAYMENT ====================
+// ==================== STEP 4: MAKE ADVANCE PAYMENT ====================
 const makeAdvancePayment = async (req, res) => {
   try {
-    const { id } = req.params; // Booking ID
+    const { id } = req.params;
     const {
       paymentMethod,
       advancePayment,
-      transactionId,
-      paymentGatewayResponse,
+      couponCode,
     } = req.body;
 
     if (!paymentMethod || !advancePayment) {
@@ -331,30 +284,80 @@ const makeAdvancePayment = async (req, res) => {
       });
     }
 
-    // Get booking
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).populate("serviceId");
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    // Check if already paid
     if (booking.advancePaid) {
       return res.status(400).json({
         message: "Advance payment already completed",
       });
     }
 
-    // Check if booking is in correct status
     if (booking.status !== "Pending") {
       return res.status(400).json({
         message: `Cannot make payment. Booking status: ${booking.status}`,
       });
     }
 
-    // Calculate required advance (30%)
-    const requiredAdvance = Math.round(booking.total * 0.30);
+    let discount = 0;
+    let voucherDoc = null;
 
-    // Validate advance amount
+    if (couponCode) {
+      voucherDoc = await Voucher.findOne({
+        code: couponCode,
+        isActive: true,
+        validFrom: { $lte: new Date() },
+        validUntil: { $gte: new Date() },
+      });
+
+      if (!voucherDoc) {
+        return res.status(400).json({
+          message: "Invalid or expired coupon code",
+        });
+      }
+
+      if (
+        !voucherDoc.applicableFor.includes(booking.serviceType) &&
+        !voucherDoc.applicableFor.includes("All")
+      ) {
+        return res.status(400).json({
+          message: `Coupon not applicable for ${booking.serviceType}`,
+        });
+      }
+
+      if (booking.subtotal < voucherDoc.minOrderValue) {
+        return res.status(400).json({
+          message: `Minimum order value of ₹${voucherDoc.minOrderValue} required for this coupon`,
+        });
+      }
+
+      if (voucherDoc.discountType === "Percentage") {
+        discount = (booking.subtotal * voucherDoc.discountValue) / 100;
+        if (voucherDoc.maxDiscount) {
+          discount = Math.min(discount, voucherDoc.maxDiscount);
+        }
+      } else {
+        discount = voucherDoc.discountValue;
+      }
+
+      voucherDoc.usedCount += 1;
+      await voucherDoc.save();
+
+      await VoucherUsage.create({
+        voucherId: voucherDoc._id,
+        voucherCode: couponCode,
+        userId: booking.customerId,
+        orderId: booking.bookingId,
+        orderType: "Booking",
+        discountApplied: discount,
+      });
+    }
+
+    const newTotal = booking.subtotal + booking.expressFee - discount;
+    const requiredAdvance = Math.round(newTotal * 0.30);
+
     if (advancePayment < requiredAdvance) {
       return res.status(400).json({
         message: `Minimum advance payment of ₹${requiredAdvance} required`,
@@ -363,69 +366,93 @@ const makeAdvancePayment = async (req, res) => {
       });
     }
 
-    // Calculate balance payment
-    const balancePayment = booking.total - advancePayment;
+    const balancePayment = newTotal - advancePayment;
 
-    // ✅ Update booking with payment details
+    booking.discount = discount;
+    booking.couponCode = couponCode || null;
+    booking.total = newTotal;
     booking.paymentMethod = paymentMethod;
     booking.advancePayment = advancePayment;
+    booking.balancePayment = balancePayment;
     booking.advancePaid = true;
-    
-    // ✅ If full payment made, mark as Paid, else keep Pending
-    if (balancePayment === 0) {
-      booking.paymentStatus = "Paid"; // ✅ Valid enum: full payment
-    } else {
-      booking.paymentStatus = "Pending"; // ✅ Valid enum: partial payment (advance only)
-    }
-    
-    booking.status = "Confirmed"; // ✅ Valid enum: booking confirmed after payment
-    booking.transactionId = transactionId || null;
-    booking.paymentGatewayResponse = paymentGatewayResponse || null;
 
-    // Add to status timeline
+    if (balancePayment === 0) {
+      booking.paymentStatus = "Paid";
+    } else {
+      booking.paymentStatus = "Pending";
+    }
+
     booking.statusTimeline.push({
-      status: "Confirmed",
+      status: "Pending",
       timestamp: new Date(),
     });
 
     await booking.save();
 
-    // Notify customer
     await Notification.create({
       recipientId: booking.customerId,
       recipientType: "Customer",
-      type: "Payment Successful",
+      type: "Payment Received",
       title: "Payment Received",
-      message: `Your advance payment of ₹${advancePayment} has been received. Booking ${booking.bookingId} is confirmed!`,
+      message: `Your advance payment of ₹${advancePayment} has been received. Booking ${booking.bookingId} is pending admin approval.`,
       relatedId: booking.bookingId,
       relatedType: "Booking",
       priority: "High",
     });
 
     console.log(`✅ Advance payment received: ${booking.bookingId}`);
-    console.log(`   Amount: ₹${advancePayment}`);
-    console.log(`   Method: ${paymentMethod}`);
-    console.log(`   Balance Due: ₹${balancePayment}`);
-    console.log(`   Status: Confirmed`);
 
     res.status(200).json({
-      message: "Advance payment successful! ✅",
-      booking: {
+      message: "Payment successful! ✅",
+      bookingSummary: {
         bookingId: booking.bookingId,
         _id: booking._id,
         status: booking.status,
         paymentStatus: booking.paymentStatus,
+
+        service: {
+          type: booking.serviceType,
+          name: booking.serviceName,
+          features: booking.package.services,
+        },
+
+        vehicle: {
+          type: booking.vehicleType,
+          number: booking.vehicleNumber,
+          // ❌ model removed
+        },
+
+        schedule: {
+          date: booking.scheduledDate,
+          time: booking.scheduledTime,
+          timeSlot: booking.timeSlot,
+          expressService: booking.expressService,
+        },
+
+        address: booking.address,
+        liveLocation: booking.liveLocation, // ✅ NEW
+
         pricing: {
-          total: booking.total,
-          advancePaid: booking.advancePayment,
+          subtotal: booking.subtotal,
+          expressFee: booking.expressFee,
+          discount: discount,
+          couponCode: couponCode || null,
+          total: newTotal,
+          advancePaid: advancePayment,
           balanceDue: balancePayment,
         },
-        paymentMethod: booking.paymentMethod,
-        transactionId: booking.transactionId,
+
+        payment: {
+          method: paymentMethod,
+          paidAt: new Date(),
+        },
+
+        qrCode: booking.qrCode,
+        createdAt: booking.createdAt,
       },
-      note: balancePayment > 0 
-        ? `Your booking is confirmed! Balance of ₹${balancePayment} will be collected after service completion.`
-        : "Your booking is confirmed and fully paid!",
+      note: balancePayment > 0
+        ? `Payment successful! Your booking is pending admin approval. Balance of ₹${balancePayment} will be collected after service completion.`
+        : "Payment successful! Your booking is pending admin approval.",
     });
   } catch (error) {
     console.error("❌ Advance payment error:", error);
@@ -441,7 +468,7 @@ const makeBalancePayment = async (req, res) => {
       paymentMethod,
       balancePayment,
       transactionId,
-      paymentGatewayResponse,
+      paymentDetails,
     } = req.body;
 
     if (!paymentMethod || !balancePayment) {
@@ -463,30 +490,24 @@ const makeBalancePayment = async (req, res) => {
     }
 
     // Check if already fully paid
-    if (booking.paymentStatus === "Paid" && booking.advancePaid) {
-      // Check if there's actually no balance due
-      const balanceDue = booking.total - booking.advancePayment;
-      if (balanceDue === 0) {
-        return res.status(400).json({
-          message: "Balance payment already completed",
-        });
-      }
+    if (booking.paymentStatus === "Paid" && booking.balancePayment === 0) {
+      return res.status(400).json({
+        message: "Balance payment already completed",
+      });
     }
 
-    // Calculate balance due
-    const balanceDue = booking.total - booking.advancePayment;
-
     // Validate balance amount
-    if (balancePayment < balanceDue) {
+    if (balancePayment < booking.balancePayment) {
       return res.status(400).json({
-        message: `Balance payment of ₹${balanceDue} required`,
-        requiredBalance: balanceDue,
+        message: `Balance payment of ₹${booking.balancePayment} required`,
+        requiredBalance: booking.balancePayment,
         providedBalance: balancePayment,
       });
     }
 
     // ✅ Update with balance payment
-    booking.paymentStatus = "Paid"; // ✅ Valid enum: now fully paid
+    booking.balancePayment = 0;
+    booking.paymentStatus = "Paid";
     booking.balanceTransactionId = transactionId || null;
     booking.balancePaymentMethod = paymentMethod;
 
@@ -501,7 +522,7 @@ const makeBalancePayment = async (req, res) => {
     await Notification.create({
       recipientId: booking.customerId,
       recipientType: "Customer",
-      type: "Payment Successful",
+      type: "Payment Received",
       title: "Balance Payment Received",
       message: `Your balance payment of ₹${balancePayment} has been received. Thank you for using SparkleWash!`,
       relatedId: booking.bookingId,
@@ -511,7 +532,6 @@ const makeBalancePayment = async (req, res) => {
 
     console.log(`✅ Balance payment received: ${booking.bookingId}`);
     console.log(`   Amount: ₹${balancePayment}`);
-    console.log(`   Status: Fully Paid`);
 
     res.status(200).json({
       message: "Balance payment successful! ✅",
